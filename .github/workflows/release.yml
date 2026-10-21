@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release
+      - name: Rename binary
+        shell: bash
+        run: cp target/release/hnb-solo-tracker.exe hnb-solo-tracker-${GITHUB_REF_NAME}-windows-x64.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: hnb-solo-tracker-*-windows-x64.exe
+          generate_release_notes: true
