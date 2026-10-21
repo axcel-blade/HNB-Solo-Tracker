@@ -17,7 +17,14 @@ Releases follow Git Flow (see [CONTRIBUTING.md](../CONTRIBUTING.md)) and Semanti
    ```
 5. Merge the release branch back into `develop`, then delete it.
 
-Pushing the tag runs `.github/workflows/release.yml`, which builds the exe and creates the GitHub release with `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` attached.
+Pushing the tag runs `.github/workflows/release.yml`, which builds the app and creates the GitHub release with two files attached:
+
+| File | Purpose |
+|---|---|
+| `HNB-Solo-Tracker-Setup-vX.Y.Z.exe` | Installer for new users, built from `installer/HNB-Solo-Tracker.iss` |
+| `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` | Portable exe; also the file the in-app updater downloads |
+
+Keep the `-windows-x64.exe` name: the updater looks for it.
 
 **The tag must match the version in `Cargo.toml`.** Installed copies compare their own version with the latest release tag and offer the update at start-up.
 

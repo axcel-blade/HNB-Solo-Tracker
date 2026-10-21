@@ -74,9 +74,14 @@ fn latest_release() -> Result<Option<State>, String> {
         .as_array()
         .and_then(|a| {
             a.iter()
-                .find(|x| x["name"].as_str().is_some_and(|n| n.ends_with(".exe")))
+                // The portable exe, not the Setup installer
+                .find(|x| {
+                    x["name"]
+                        .as_str()
+                        .is_some_and(|n| n.ends_with("-windows-x64.exe"))
+                })
         })
-        .ok_or("Release has no .exe asset")?;
+        .ok_or("Release has no portable .exe asset")?;
     Ok(Some(State::Available {
         version: latest.to_string(),
         url: asset["browser_download_url"]

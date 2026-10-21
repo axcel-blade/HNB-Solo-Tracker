@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [0.1.0] - 2026-10-21
 
 ### Added
+- Windows installer (Inno Setup): per-user install, Start Menu and desktop shortcuts, uninstaller.
 - Phone number entry with a two-step pop-up: bank (HNB / Other Bank), then product.
 - Three product columns (Solo Max, Solo Credit/Debit Card, Solo Bank Acc) with live counts.
 - Count cards with HNB / Other Bank split and a grand total.

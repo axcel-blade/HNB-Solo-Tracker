@@ -33,8 +33,9 @@
 
 ## Install
 
-1. Download the latest `hnb-solo-tracker-*-windows-x64.exe` from [Releases](https://github.com/axcel-blade/HNB-Solo-Tracker/releases/latest).
-2. Run it. No installer is needed.
+**Installer (recommended):** download `HNB-Solo-Tracker-Setup-vX.Y.Z.exe` from [Releases](https://github.com/axcel-blade/HNB-Solo-Tracker/releases/latest) and run it. It installs for the current user (no admin rights needed), adds Start Menu and optional desktop shortcuts, and can be removed from **Settings → Apps**.
+
+**Portable:** download `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` and run it from anywhere.
 
 Windows SmartScreen may warn about an unsigned app the first time; choose **More info → Run anyway**.
 
