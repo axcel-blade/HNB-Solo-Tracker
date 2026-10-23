@@ -1,84 +1,76 @@
 # Architecture
 
-HNB Solo Tracker is a single native Windows executable written in Rust.
+HNB Solo Tracker is one Flutter app (`hnb_solo_tracker`) for Android, iOS, web, Windows, macOS, and Linux. The screen is a single page, `TrackerScreen`, with a two-step dialog for bank and category.
 
 ## Technology
 
 | Concern | Choice |
 |---|---|
-| Language | Rust (2021 edition) |
-| GUI | [egui](https://github.com/emilk/egui) / eframe 0.29 (immediate mode) |
-| Icons | [egui-phosphor](https://github.com/amPerl/egui-phosphor) (Phosphor icon font) |
-| Storage | SQLite via [rusqlite](https://github.com/rusqlite/rusqlite), bundled so nothing extra needs installing |
-| File dialogs | [rfd](https://github.com/PolyMeilex/rfd) |
-| Updates | [ureq](https://github.com/algesten/ureq), [semver](https://github.com/dtolnay/semver), [self-replace](https://github.com/mitsuhiko/self-replace) |
-| Exe icon | [winresource](https://github.com/BenjaminRi/winresource) in `build.rs` |
+| UI | Flutter, Material 3, Inter via `google_fonts` |
+| State | `TrackerStore` (`ChangeNotifier`) holding the entry list |
+| Database | Drift 2.35.2 and drift_flutter 0.3.1 |
+| Native SQLite | `sqlite3_flutter_libs`, file `solo_collection.sqlite` |
+| Web SQLite | `web/sqlite3.wasm` and `web/drift_worker.js` |
+| Import and export files | `file_picker` |
 
-## Source layout
+There is no settings screen, no in-app updater, and no background sync.
+
+## Layout
 
 ```
-.
-├── assets/                          app icon (PNG for the window, ICO for the exe)
-├── build.rs                         embeds assets/icon.ico into the exe
-├── src/
-│   ├── main.rs                      theme, data model, SQLite access, UI
-│   └── updater.rs                   GitHub release check, download, self-replace
-└── .github/workflows/release.yml    builds and publishes releases
+lib/
+  main.dart                      opens AppDatabase.defaults() and the store
+  database/app_database.dart     Entries table and replace-all writes
+  logic/collection_logic.dart    validation, counts, CSV, JSON
+  models/                        CollectionEntry, banks, categories
+  screens/tracker_screen.dart    page, toasts, confirmations
+  services/tracker_store.dart    load and persist through Drift
+  services/file_exchange.dart    pick and save text files
+  theme/app_theme.dart           colours from the reference page
+  widgets/                       metrics, list, form, options dialog
+test/                            logic, in-memory Drift, widget flow
+android/ ios/ web/ windows/ macos/ linux/
 ```
 
-## Components (`src/main.rs`)
+`dart run build_runner build --delete-conflicting-outputs` regenerates `lib/database/app_database.g.dart` after a table change.
 
-| Part | Responsibility |
+## Launcher icon
+
+The mark is three checked collection rows. The field is the app blue `#2463EB`. The checks are navy `#10233F`, the same colours as `AppColors.blue` and `AppColors.navy` in `lib/theme/app_theme.dart`.
+
+| File | Role |
 |---|---|
-| `mod theme` | Colour tokens taken from hnb.lk |
-| `Bank`, `Product` | Enums with label, icon, colour and database code |
-| `Db` | Opens or creates the database, migrates old data, insert / delete / clear / list |
-| `App` | UI state: cached entries, input text, current pop-up step, tab, status message |
-| `App::header` | Brand bar, Export and Clear buttons, phone input |
-| `App::summary_cards`, `columns_view`, `transactions_view` | Main views |
-| `App::dialogs` | Bank and product pop-ups |
-| `App::update_banner` | Update notification bar |
-| Components | `surface`, `stat_card`, `choice_tile`, `pill`, `bank_tag`, `icon_badge`, buttons |
+| `assets/icons/app_icon.png` | Full icon for iOS, web, Windows, macOS, and Linux |
+| `assets/icons/app_icon_background.png` | Android adaptive background |
+| `assets/icons/app_icon_foreground.png` | Android adaptive foreground. Transparent outside the rows so they stay inside the mask |
 
-## Entry flow
+After editing those files:
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> ChooseBank: Enter or Next (valid number)
-    ChooseBank --> ChooseProduct: HNB or Other (1 / 2)
-    ChooseProduct --> ChooseBank: Back or Backspace
-    ChooseProduct --> Idle: product chosen (1 / 2 / 3), row inserted
-    ChooseBank --> Idle: Esc
-    ChooseProduct --> Idle: Esc
+```bash
+dart run flutter_launcher_icons
 ```
 
-The current step is held in the `Step` enum. When a product is chosen, the row is written to SQLite and the in-memory list is reloaded, so the database is always the source of truth.
+That writes Android, iOS, web, Windows, and macOS sizes. It does not write the Linux icon. Copy `assets/icons/app_icon.png` to `linux/runner/resources/app_icon.png`.
 
-## Rendering model
+`windows/runner/resources/app_icon.ico` contains 16, 24, 32, 48, 64, 128, and 256. The command above replaces that file with a single 256 image, so put the smaller sizes back from `app_icon.png` when the artwork changes.
 
-egui redraws the whole UI each frame from the `App` state. Counts are computed from the in-memory `entries` list, which stays small (thousands of rows at most), so no caching is needed.
+## Saving an entry
 
-## Update flow (`src/updater.rs`)
+1. `checkPhone` trims the value and requires 7–20 characters.
+2. The dialog returns a bank (`HNB` or `Other Bank`) and a category id (`max`, `card`, `bank`, `hnbacc`).
+3. `TrackerStore.add` appends a `CollectionEntry` (new id, entry date `YYYY-MM-DD`, `createdAt` now).
+4. `AppDatabase.replaceEntries` deletes every row and inserts the list again, in order, inside a transaction.
+5. The UI shows `entries.reversed`, so the newest row is first. Counts only include the four known category ids.
 
-```mermaid
-sequenceDiagram
-    participant App
-    participant GitHub
-    App->>GitHub: GET /repos/axcel-blade/HNB-Solo-Tracker/releases/latest
-    GitHub-->>App: tag_name, assets, body
-    alt tag newer than CARGO_PKG_VERSION
-        App->>App: show update banner
-        App->>GitHub: download the .exe asset (after Install is clicked)
-        App->>App: check "MZ" header, write temp file
-        App->>App: self_replace(temp), then offer Restart now
-    else up to date or offline
-        App->>App: stay silent
-    end
-```
+Export uses insertion order. CSV import merges in memory and then calls `replaceAll`. JSON import replaces the list with the valid backup rows after confirmation.
 
-Network work runs on background threads and shares state through `Arc<Mutex<State>>`, so the UI thread is never blocked.
+## Platforms
 
-## Release pipeline
+`AppDatabase.defaults()` calls `driftDatabase(name: 'solo_collection')`.
 
-Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml` on `windows-latest`. It builds in release mode and attaches `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` to a GitHub release. See [RELEASING.md](RELEASING.md).
+- Mobile and desktop: Drift opens `solo_collection.sqlite` in the application documents directory.
+- Web: the same call passes `DriftWebOptions` for `sqlite3.wasm` and `drift_worker.js`.
+
+Tests pass `NativeDatabase.memory()` into `AppDatabase` so they do not touch the real file.
+
+There is no GitHub Actions workflow in this tree. Analyze and test locally with `flutter analyze` and `flutter test`.

@@ -61,25 +61,25 @@ docs: update database schema
 
 ## Development setup
 
-- Rust stable (`rustup default stable`)
-- Windows 10 or 11
+- Flutter stable with Dart 3.12.2 or newer
 
 ```bash
-cargo run
+flutter pub get
+flutter run -d windows
 ```
+
+Use `chrome`, `android`, `ios`, `macos`, or `linux` when that target is available. See [README.md](README.md).
+
+If you change the launcher artwork, follow [Launcher icon](docs/ARCHITECTURE.md#launcher-icon) and regenerate the platform sizes before opening a pull request.
 
 Before opening a pull request, run:
 
 ```bash
-cargo fmt
+flutter analyze
 ```
 
 ```bash
-cargo clippy -- -D warnings
-```
-
-```bash
-cargo build --release
+flutter test
 ```
 
 ## Pull requests
