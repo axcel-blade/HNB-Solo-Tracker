@@ -1,7 +1,7 @@
 ; Inno Setup script for HNB Solo Tracker (Flutter).
 ; Build the app first: flutter build windows
-; Then: iscc /DAppVersion=1.1.0 installer\HNB-Solo-Tracker.iss
-; Output: dist\HNB-Solo-Tracker-Setup-1.1.0.exe
+; Then: iscc /DAppVersion=1.2.0 installer\HNB-Solo-Tracker.iss
+; Output: dist\HNB-Solo-Tracker-Setup-1.2.0.exe
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"

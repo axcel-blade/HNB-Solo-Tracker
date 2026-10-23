@@ -7,7 +7,7 @@
 | The Flutter app on `develop` / `main` | Yes |
 | The 0.1.0 Windows desktop release | No |
 
-The app does not check for updates.
+When the app opens, and from Settings, it asks GitHub whether a newer release exists. It does not download or install that release.
 
 ## Reporting a vulnerability
 
@@ -24,4 +24,4 @@ You should get a reply within 7 days. Once a fix is released, the advisory is pu
 ## Data handling
 
 - Entries are stored only on the device: `solo_collection.sqlite` in the application documents directory, or the browser database `solo_collection` on web. The app does not send them to a server.
-- CSV and JSON exports contain phone numbers. Store and share them according to your data-protection policy.
+- CSV and JSON exports contain contact or reference numbers and the registration fields stored with them. Store and share them according to your data-protection policy.
