@@ -551,7 +551,7 @@ class _BrandTitle extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 child: Text(
-                  'v1.1.0',
+                  'v1.2.0',
                   style: TextStyle(
                     color: PortalColors.gold,
                     fontSize: 11,
