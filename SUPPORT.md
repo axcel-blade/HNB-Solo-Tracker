@@ -14,4 +14,4 @@
 - What you did, what you expected, and what happened
 - A screenshot if possible
 
-**Never post real customer phone numbers.** Replace them with dummy values such as `0770000000`.
+**Never post real customer phone numbers or reference numbers.** Replace them with dummy values such as `0770000000` or `Ref #1029`.

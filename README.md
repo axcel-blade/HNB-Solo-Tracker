@@ -1,28 +1,32 @@
 # HNB Solo Tracker
 
-A Flutter app for logging Solo collection entries. The package name is `hnb_solo_tracker`. The screen title is **Solo Collection Tracker**.
+A Flutter app for customer registration and lead analytics. The package name is `hnb_solo_tracker`. The screen title is **HNB Solo Tracker**. The subtitle is **Customer Registration & Lead Analytics Portal**. The header badge shows the app version from this release (`v1.2.0`).
 
-It runs from one codebase on Android, iOS, web, Windows, macOS, and Linux. Entries stay on the device in a Drift SQLite database.
+It runs from one codebase on Android, iOS, web, Windows, macOS, and Linux. Registrations stay on the device in a Drift SQLite database.
 
 This is an independent tool and is not an official product of Hatton National Bank PLC.
 
-![Solo Collection Tracker icon](assets/icons/app_icon.png)
+![HNB Solo Tracker icon](assets/icons/app_icon.png)
 
-The launcher icon is that collection list, in the app blue (`#2463EB`) with navy checks (`#10233F`). Source art is in `assets/icons/`. See [Architecture](docs/ARCHITECTURE.md#launcher-icon) to regenerate platform sizes.
+The launcher icon is a collection list, in the app blue (`#2463EB`) with navy checks (`#10233F`). Source art is in `assets/icons/`. See [Architecture](docs/ARCHITECTURE.md#launcher-icon) to regenerate platform sizes. The portal screen itself uses a dark navy and gold layout.
 
 ## What it does
 
-- Enter a phone number (trimmed, 7–20 characters) and an entry date.
-- Choose the place the number was collected. HNB branches record as **HNB**. Other banks and other companies stay with that organization.
-- A built-in directory lists HNB branches, other Sri Lankan banks, and finance companies. Custom branches and companies can be added.
-- Then choose a category: **Solo Max**, **Credit/Debit**, **Other Bank acc**, or **HNB ACC**.
-- Live counts for those four categories and a **Grand Total**.
-- A newest-first list with the recorded organization and place, per-row delete, and an empty state.
-- CSV export for a date range (leave both dates blank to export everything). Columns include the place and organization kind. Older CSV files still import.
-- JSON backup, JSON import that replaces the current entries after you confirm, and CSV import that keeps existing rows and skips duplicates (same phone, bank, place, category, and entry date).
-- **Settings** for the place lists, a GitHub release check, and the developer credit. The check does not install an update. It opens the GitHub release page.
-- The main screen credits [Axcel Blade](https://github.com/axcel-blade) (`@axcel-blade`).
-- **Clear all entries** after confirmation.
+- Enter a contact or reference number (a phone number or a short reference such as `Ref #1029`). Empty text is rejected. There is no 7-character minimum. The stored value is trimmed and at most 120 characters.
+- Choose **HNB Bank** or **Other Bank**.
+- For HNB: member status **Old Active Member** or **New Active Member**, and product **SOLO MAX** or **HNB ACC**.
+- For Other Bank: payment source **Credit/Debit Card** or **Bank Account**. The product is stored as **External App**.
+- Choose an acquisition channel:
+  - **HNB Branch** — 256 Sri Lankan branches. Negombo branches are first, then the other named branches, then generated names such as `HNB Branch Ref #101`.
+  - **Department** — an HNB Tower department. The detail is stored as `HNB Tower - {department}`.
+  - **Own Visit** — free text. Blank text is stored as `Direct Own Visit`.
+- KPI cards: **Total Registrations**, **HNB Members** (with the percent of all entries), **Other Banks**, **Branches**, **HNB Tower Depts**, and **Own Visits**.
+- Charts for the bank provider ratio and the channel breakdown.
+- A searchable registrations log, newest first, with per-row delete.
+- **Export Data** for a required start and end date. The range is inclusive. Download CSV or JSON. Import CSV and Import JSON are in that same dialog. Older collection CSV and JSON backups still import and are mapped into the current record shape.
+- **Clear All Data** after confirmation.
+- **Settings** for the place lists, a GitHub release check, and the developer credit. The registration form does not open the old place and category dialog. The check does not install an update. It opens the GitHub release page.
+- Settings credits [Axcel Blade](https://github.com/axcel-blade) (`@axcel-blade`).
 
 ## Requirements
 
@@ -63,7 +67,7 @@ flutter build windows
 
 ## Data
 
-Native mobile and desktop store `solo_collection.sqlite` in the application documents directory (`getApplicationDocumentsDirectory`). On Windows that is `%USERPROFILE%\Documents\solo_collection.sqlite`. Schema version 2 stores each number’s place and a directory of branches and companies in that same file.
+Native mobile and desktop store `solo_collection.sqlite` in the application documents directory (`getApplicationDocumentsDirectory`). On Windows that is `%USERPROFILE%\Documents\solo_collection.sqlite`. Schema version 3 stores the registration fields in that same file. Older rows are mapped when they are read.
 
 The browser uses the same Drift API with `web/sqlite3.wasm` and `web/drift_worker.js`. The database name is `solo_collection` (IndexedDB, or OPFS when the browser supports it). Nothing is uploaded.
 
@@ -86,8 +90,8 @@ dart run build_runner build --delete-conflicting-outputs
 
 | Document | Description |
 |---|---|
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to enter a place, export, import, and check for updates |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, places, update check, and the launcher icon |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to register a customer, export, import, and check for updates |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, registration flow, update check, and the launcher icon |
 | [docs/DATABASE.md](docs/DATABASE.md) | Drift schema and where the file lives |
 | [docs/RELEASING.md](docs/RELEASING.md) | Versioning a release by hand |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Git Flow and pull requests |
