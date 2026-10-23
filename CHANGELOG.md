@@ -5,25 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
-### Added
-- Settings tab: staff name and branch (added to CSV exports), phone number length, duplicate handling (allow / warn / block), interface size, default export folder, update check on start-up and "Check now", database backup, open data folder, reset settings.
-- `settings` table in the database.
+### Changed
+- Replaced the Windows desktop app with a Flutter app (`hnb_solo_tracker`) for Android, iOS, web, Windows, macOS, and Linux.
+- Solo Collection Tracker flow: phone (trimmed, 7–20 characters), entry date, Other Bank or HNB, then Solo Max, Credit/Debit, Other Bank acc, or HNB ACC.
+- Count cards for those four categories plus a grand total. Newest-first list, per-row delete, empty state, date-range CSV export, JSON backup, JSON import that replaces after confirmation, CSV import that skips duplicate phone/bank/category/date rows, and clear-all.
+- Local storage is Drift 2.35.2 (`solo_collection.sqlite` on native platforms, wasm sqlite in the browser).
+
+The 0.1.0 notes below describe the previous Windows desktop release, not the Flutter app.
 
 ## [0.1.0] - 2026-10-21
 
 ### Added
-- Windows installer (Inno Setup): per-user install, Start Menu and desktop shortcuts, uninstaller.
-- Phone number entry with a two-step pop-up: bank (HNB / Other Bank), then product.
-- Three product columns (Solo Max, Solo Credit/Debit Card, Solo Bank Acc) with live counts.
-- Count cards with HNB / Other Bank split and a grand total.
-- Transactions tab with search and per-entry delete.
-- Duplicate-number warning per product.
-- CSV export of transactions plus a summary table.
-- Local SQLite storage, with a one-time import of the earlier `data.json` file.
-- Update check against GitHub Releases at start-up, with in-app download, install and restart.
-- GitHub Actions workflow that builds and publishes the Windows `.exe` on version tags.
-- HNB colour theme (from hnb.lk), Phosphor icons and an app icon.
-- Project documentation and GitHub templates.
+- Windows desktop app with a per-user installer and a portable executable.
+- Phone entry, HNB / Other Bank, and three product columns with counts.
+- Transactions list, CSV export, and a local SQLite file.
+- GitHub Actions workflow that published the Windows executable.
 
 [Unreleased]: https://github.com/axcel-blade/HNB-Solo-Tracker/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/axcel-blade/HNB-Solo-Tracker/releases/tag/v0.1.0

@@ -4,6 +4,6 @@
 
 **What happened?**
 
-**App version and Windows version**
+**App version (`pubspec.yaml`) and platform (Android, iOS, web, Windows, macOS, or Linux)**
 
 <!-- Never post real customer phone numbers. -->

@@ -20,7 +20,7 @@ A clear description of what went wrong.
 <!-- Hide or replace any real customer phone numbers. -->
 
 **Environment**
-- App version (bottom bar):
-- Windows version:
+- App version (`version` in `pubspec.yaml`):
+- Platform (Android, iOS, web, Windows, macOS, or Linux) and OS version:
 
 **Additional context**

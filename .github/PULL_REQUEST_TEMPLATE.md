@@ -16,8 +16,8 @@
 
 ## Checklist
 
-- [ ] `cargo fmt` and `cargo clippy -- -D warnings` pass
-- [ ] `cargo build --release` succeeds
+- [ ] `flutter analyze` reports no issues
+- [ ] `flutter test` passes
 - [ ] Tested the change in the running app
 - [ ] `CHANGELOG.md` updated under **Unreleased**
 - [ ] Screenshots added for UI changes

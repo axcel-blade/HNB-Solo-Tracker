@@ -1,118 +1,62 @@
 # Database
 
-## Location
+Drift (`lib/database/app_database.dart`) owns one table, `entries`. Schema version is 1. The database name passed to `driftDatabase` is `solo_collection`.
 
-```
-%APPDATA%\HNB Solo Tracker\hnb_solo_tracker.db
-```
+## Where it is stored
 
-The database is created automatically on first start. It runs in SQLite WAL mode, so `-wal` and `-shm` files appear next to it while the app is open.
+| Platform | Location |
+|---|---|
+| Android, iOS, Windows, macOS, Linux | `solo_collection.sqlite` in the application documents directory |
+| Windows path | `%USERPROFILE%\Documents\solo_collection.sqlite` |
+| Web | Browser storage named `solo_collection`, opened with `web/sqlite3.wasm` and `web/drift_worker.js` |
+
+`shared_preferences` is not used. Web falls back to IndexedDB when the browser cannot use the OPFS worker. Data survives a reload in that browser profile. It does not sync to a server.
+
+Close the native app before copying the sqlite file. On the web, use **Download JSON Backup** if you need a copy you can move.
 
 ## Schema
 
-```sql
-CREATE TABLE IF NOT EXISTS entries (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone      TEXT NOT NULL,
-    bank       TEXT NOT NULL,
-    product    TEXT NOT NULL,
-    created_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_entries_product ON entries(product);
-```
-
-```mermaid
-erDiagram
-    ENTRIES {
-        INTEGER id PK
-        TEXT phone
-        TEXT bank
-        TEXT product
-        TEXT created_at
-    }
-```
-
-### `entries`
-
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER | Auto-increment primary key |
-| `phone` | TEXT | Phone number, digits and `+` only. Stored as text so leading zeros are kept. |
-| `bank` | TEXT | `HNB` or `OTHER` |
-| `product` | TEXT | `SOLO_MAX`, `SOLO_CARD` or `SOLO_BANK_ACC` |
-| `created_at` | TEXT | Local time, `YYYY-MM-DD HH:MM:SS` |
-
-### `settings`
-
-| Column | Type | Description |
-|---|---|---|
-| `key` | TEXT | Primary key. The app uses the single key `app`. |
-| `value` | TEXT | JSON with the user's settings |
+Drift names columns in snake case.
 
 ```sql
-CREATE TABLE IF NOT EXISTS settings (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+CREATE TABLE entries (
+  local_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+  id          TEXT NOT NULL,
+  phone       TEXT NOT NULL,
+  bank        TEXT NOT NULL,
+  category    TEXT NOT NULL,
+  entry_date  TEXT NOT NULL,
+  created_at  INTEGER
 );
 ```
 
-Example `value`:
-
-```json
-{"staff_name":"","branch":"","min_digits":9,"max_digits":12,"duplicate_policy":"Warn","ui_scale":1.0,"check_updates_on_start":true,"export_folder":""}
-```
-
-Missing fields fall back to their defaults, so older settings keep working after an update.
-
-### Code values
-
-| Code | Shown in the app |
+| Column | Meaning |
 |---|---|
-| `HNB` | HNB |
-| `OTHER` | Other Bank |
-| `SOLO_MAX` | Solo Max |
-| `SOLO_CARD` | Solo Credit/Debit Card |
-| `SOLO_BANK_ACC` | Solo Bank Acc |
+| `local_id` | Insert order. The list on screen is this order reversed. |
+| `id` | String id used by delete and JSON backup. |
+| `phone` | Trimmed text, stored as typed. Not limited to digits. |
+| `bank` | `HNB` or `Other Bank` |
+| `category` | `max`, `card`, `bank`, or `hnbacc` |
+| `entry_date` | `YYYY-MM-DD` from the date picker. May be empty on older imported rows. |
+| `created_at` | Drift integer timestamp, or null |
 
-## Useful queries
+| Category id | Label |
+|---|---|
+| `max` | Solo Max |
+| `card` | Credit/Debit |
+| `bank` | Other Bank acc |
+| `hnbacc` | HNB ACC |
 
-Counts per product and bank:
+There is no `settings` table.
 
-```sql
-SELECT product, bank, COUNT(*) AS total
-FROM entries
-GROUP BY product, bank
-ORDER BY product, bank;
-```
+## Writes
 
-Today's entries:
+`replaceEntries` is the only write path: delete all rows, then insert the current list in one transaction. Add, delete, clear, JSON import, and CSV import all go through that.
 
-```sql
-SELECT * FROM entries
-WHERE date(created_at) = date('now', 'localtime');
-```
+JSON backup is a pretty-printed array of `{id, phone, bank, category, entryDate, createdAt}`. `createdAt` is omitted when null. Import drops objects that fail the bank and category checks, then replaces the table if you confirm.
 
-Numbers recorded more than once for the same product:
-
-```sql
-SELECT phone, product, COUNT(*) AS times
-FROM entries
-GROUP BY phone, product
-HAVING times > 1;
-```
-
-You can open the file with [DB Browser for SQLite](https://sqlitebrowser.org/). Close the app first to avoid locking issues.
-
-## Migration from `data.json`
-
-Early builds stored data in `%APPDATA%\HNB Solo Tracker\data.json`. On start-up, if that file exists, every entry is imported into `entries` and the file is renamed to `data.json.migrated`, so the import runs only once.
-
-## Backup and restore
-
-- **Backup:** use **Settings → Data → Back up database**, which saves a consistent copy while the app is open. Or close the app and copy `hnb_solo_tracker.db`.
-- **Restore:** close the app and replace the file with your backup.
+CSV duplicate key is phone + bank + category id + entry date.
 
 ## Privacy
 
-The database holds customer phone numbers. Keep the Windows account protected and follow your bank's data-protection rules when copying the file or exported CSVs.
+The file and the browser database contain phone numbers. Treat exports the same way.

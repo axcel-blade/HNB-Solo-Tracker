@@ -1,32 +1,27 @@
 # Releasing
 
-Releases follow Git Flow (see [CONTRIBUTING.md](../CONTRIBUTING.md)) and Semantic Versioning.
+Releases follow Git Flow in [CONTRIBUTING.md](../CONTRIBUTING.md) and Semantic Versioning. The app version lives in `pubspec.yaml` (`version: 1.0.0+1` means name `1.0.0`, build number `1`).
 
-1. Create the release branch from `develop`:
-   ```bash
-   git checkout -b release/X.Y.Z develop
-   ```
-2. Set `version = "X.Y.Z"` in `Cargo.toml` and run `cargo build` to update `Cargo.lock`.
+There is no GitHub Actions workflow in this repository. A tag does not build or upload anything by itself.
+
+1. Branch from `develop`: `git checkout -b release/X.Y.Z develop`.
+2. Set `version: X.Y.Z+build` in `pubspec.yaml`.
 3. Move the **Unreleased** notes in `CHANGELOG.md` under a new `[X.Y.Z]` heading.
-4. Merge into `main`, tag, and push:
-   ```bash
-   git checkout main
-   git merge --no-ff release/X.Y.Z
-   git tag vX.Y.Z
-   git push origin main --tags
-   ```
-5. Merge the release branch back into `develop`, then delete it.
+4. Run `flutter analyze` and `flutter test`.
+5. Merge into `main`, tag `vX.Y.Z`, and merge the release branch back into `develop`.
 
-Pushing the tag runs `.github/workflows/release.yml`, which builds the app and creates the GitHub release with two files attached:
+Build the artifacts you intend to ship on a machine that can compile that target:
 
-| File | Purpose |
+| Target | Command |
 |---|---|
-| `HNB-Solo-Tracker-Setup-vX.Y.Z.exe` | Installer for new users, built from `installer/HNB-Solo-Tracker.iss` |
-| `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` | Portable exe; also the file the in-app updater downloads |
+| Windows | `flutter build windows` → `build/windows/x64/runner/Release/hnb_solo_tracker.exe` |
+| Web | `flutter build web` |
+| Android | `flutter build apk` or `flutter build appbundle` |
+| iOS | `flutter build ipa` on macOS |
+| macOS | `flutter build macos` on macOS |
+| Linux | `flutter build linux` on Linux |
 
-Keep the `-windows-x64.exe` name: the updater looks for it.
-
-**The tag must match the version in `Cargo.toml`.** Installed copies compare their own version with the latest release tag and offer the update at start-up.
+Attach those files to the GitHub release yourself. The app does not check for updates.
 
 ## Hotfixes
 
@@ -34,4 +29,4 @@ Keep the `-windows-x64.exe` name: the updater looks for it.
 git checkout -b hotfix/X.Y.Z main
 ```
 
-Fix the problem, bump the patch version, then merge into both `main` (tag `vX.Y.Z`) and `develop`.
+Fix the problem, bump the patch version in `pubspec.yaml`, then merge into `main` (tag `vX.Y.Z`) and `develop`.
