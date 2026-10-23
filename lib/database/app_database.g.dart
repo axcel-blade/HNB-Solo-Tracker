@@ -105,6 +105,66 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _bankTypeMeta = const VerificationMeta(
+    'bankType',
+  );
+  @override
+  late final GeneratedColumn<String> bankType = GeneratedColumn<String>(
+    'bank_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _memberStatusMeta = const VerificationMeta(
+    'memberStatus',
+  );
+  @override
+  late final GeneratedColumn<String> memberStatus = GeneratedColumn<String>(
+    'member_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _productTypeMeta = const VerificationMeta(
+    'productType',
+  );
+  @override
+  late final GeneratedColumn<String> productType = GeneratedColumn<String>(
+    'product_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _channelTypeMeta = const VerificationMeta(
+    'channelType',
+  );
+  @override
+  late final GeneratedColumn<String> channelType = GeneratedColumn<String>(
+    'channel_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _channelDetailMeta = const VerificationMeta(
+    'channelDetail',
+  );
+  @override
+  late final GeneratedColumn<String> channelDetail = GeneratedColumn<String>(
+    'channel_detail',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -116,6 +176,11 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
     createdAt,
     place,
     organizationKind,
+    bankType,
+    memberStatus,
+    productType,
+    channelType,
+    channelDetail,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -193,6 +258,48 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
         ),
       );
     }
+    if (data.containsKey('bank_type')) {
+      context.handle(
+        _bankTypeMeta,
+        bankType.isAcceptableOrUnknown(data['bank_type']!, _bankTypeMeta),
+      );
+    }
+    if (data.containsKey('member_status')) {
+      context.handle(
+        _memberStatusMeta,
+        memberStatus.isAcceptableOrUnknown(
+          data['member_status']!,
+          _memberStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('product_type')) {
+      context.handle(
+        _productTypeMeta,
+        productType.isAcceptableOrUnknown(
+          data['product_type']!,
+          _productTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('channel_type')) {
+      context.handle(
+        _channelTypeMeta,
+        channelType.isAcceptableOrUnknown(
+          data['channel_type']!,
+          _channelTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('channel_detail')) {
+      context.handle(
+        _channelDetailMeta,
+        channelDetail.isAcceptableOrUnknown(
+          data['channel_detail']!,
+          _channelDetailMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -238,6 +345,26 @@ class $EntriesTable extends Entries with TableInfo<$EntriesTable, Entry> {
         DriftSqlType.string,
         data['${effectivePrefix}organization_kind'],
       )!,
+      bankType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_type'],
+      )!,
+      memberStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}member_status'],
+      )!,
+      productType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_type'],
+      )!,
+      channelType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel_type'],
+      )!,
+      channelDetail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel_detail'],
+      )!,
     );
   }
 
@@ -257,6 +384,11 @@ class Entry extends DataClass implements Insertable<Entry> {
   final DateTime? createdAt;
   final String place;
   final String organizationKind;
+  final String bankType;
+  final String memberStatus;
+  final String productType;
+  final String channelType;
+  final String channelDetail;
   const Entry({
     required this.localId,
     required this.id,
@@ -267,6 +399,11 @@ class Entry extends DataClass implements Insertable<Entry> {
     this.createdAt,
     required this.place,
     required this.organizationKind,
+    required this.bankType,
+    required this.memberStatus,
+    required this.productType,
+    required this.channelType,
+    required this.channelDetail,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -282,6 +419,11 @@ class Entry extends DataClass implements Insertable<Entry> {
     }
     map['place'] = Variable<String>(place);
     map['organization_kind'] = Variable<String>(organizationKind);
+    map['bank_type'] = Variable<String>(bankType);
+    map['member_status'] = Variable<String>(memberStatus);
+    map['product_type'] = Variable<String>(productType);
+    map['channel_type'] = Variable<String>(channelType);
+    map['channel_detail'] = Variable<String>(channelDetail);
     return map;
   }
 
@@ -298,6 +440,11 @@ class Entry extends DataClass implements Insertable<Entry> {
           : Value(createdAt),
       place: Value(place),
       organizationKind: Value(organizationKind),
+      bankType: Value(bankType),
+      memberStatus: Value(memberStatus),
+      productType: Value(productType),
+      channelType: Value(channelType),
+      channelDetail: Value(channelDetail),
     );
   }
 
@@ -316,6 +463,11 @@ class Entry extends DataClass implements Insertable<Entry> {
       createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
       place: serializer.fromJson<String>(json['place']),
       organizationKind: serializer.fromJson<String>(json['organizationKind']),
+      bankType: serializer.fromJson<String>(json['bankType']),
+      memberStatus: serializer.fromJson<String>(json['memberStatus']),
+      productType: serializer.fromJson<String>(json['productType']),
+      channelType: serializer.fromJson<String>(json['channelType']),
+      channelDetail: serializer.fromJson<String>(json['channelDetail']),
     );
   }
   @override
@@ -331,6 +483,11 @@ class Entry extends DataClass implements Insertable<Entry> {
       'createdAt': serializer.toJson<DateTime?>(createdAt),
       'place': serializer.toJson<String>(place),
       'organizationKind': serializer.toJson<String>(organizationKind),
+      'bankType': serializer.toJson<String>(bankType),
+      'memberStatus': serializer.toJson<String>(memberStatus),
+      'productType': serializer.toJson<String>(productType),
+      'channelType': serializer.toJson<String>(channelType),
+      'channelDetail': serializer.toJson<String>(channelDetail),
     };
   }
 
@@ -344,6 +501,11 @@ class Entry extends DataClass implements Insertable<Entry> {
     Value<DateTime?> createdAt = const Value.absent(),
     String? place,
     String? organizationKind,
+    String? bankType,
+    String? memberStatus,
+    String? productType,
+    String? channelType,
+    String? channelDetail,
   }) => Entry(
     localId: localId ?? this.localId,
     id: id ?? this.id,
@@ -354,6 +516,11 @@ class Entry extends DataClass implements Insertable<Entry> {
     createdAt: createdAt.present ? createdAt.value : this.createdAt,
     place: place ?? this.place,
     organizationKind: organizationKind ?? this.organizationKind,
+    bankType: bankType ?? this.bankType,
+    memberStatus: memberStatus ?? this.memberStatus,
+    productType: productType ?? this.productType,
+    channelType: channelType ?? this.channelType,
+    channelDetail: channelDetail ?? this.channelDetail,
   );
   Entry copyWithCompanion(EntriesCompanion data) {
     return Entry(
@@ -368,6 +535,19 @@ class Entry extends DataClass implements Insertable<Entry> {
       organizationKind: data.organizationKind.present
           ? data.organizationKind.value
           : this.organizationKind,
+      bankType: data.bankType.present ? data.bankType.value : this.bankType,
+      memberStatus: data.memberStatus.present
+          ? data.memberStatus.value
+          : this.memberStatus,
+      productType: data.productType.present
+          ? data.productType.value
+          : this.productType,
+      channelType: data.channelType.present
+          ? data.channelType.value
+          : this.channelType,
+      channelDetail: data.channelDetail.present
+          ? data.channelDetail.value
+          : this.channelDetail,
     );
   }
 
@@ -382,7 +562,12 @@ class Entry extends DataClass implements Insertable<Entry> {
           ..write('entryDate: $entryDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('place: $place, ')
-          ..write('organizationKind: $organizationKind')
+          ..write('organizationKind: $organizationKind, ')
+          ..write('bankType: $bankType, ')
+          ..write('memberStatus: $memberStatus, ')
+          ..write('productType: $productType, ')
+          ..write('channelType: $channelType, ')
+          ..write('channelDetail: $channelDetail')
           ..write(')'))
         .toString();
   }
@@ -398,6 +583,11 @@ class Entry extends DataClass implements Insertable<Entry> {
     createdAt,
     place,
     organizationKind,
+    bankType,
+    memberStatus,
+    productType,
+    channelType,
+    channelDetail,
   );
   @override
   bool operator ==(Object other) =>
@@ -411,7 +601,12 @@ class Entry extends DataClass implements Insertable<Entry> {
           other.entryDate == this.entryDate &&
           other.createdAt == this.createdAt &&
           other.place == this.place &&
-          other.organizationKind == this.organizationKind);
+          other.organizationKind == this.organizationKind &&
+          other.bankType == this.bankType &&
+          other.memberStatus == this.memberStatus &&
+          other.productType == this.productType &&
+          other.channelType == this.channelType &&
+          other.channelDetail == this.channelDetail);
 }
 
 class EntriesCompanion extends UpdateCompanion<Entry> {
@@ -424,6 +619,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
   final Value<DateTime?> createdAt;
   final Value<String> place;
   final Value<String> organizationKind;
+  final Value<String> bankType;
+  final Value<String> memberStatus;
+  final Value<String> productType;
+  final Value<String> channelType;
+  final Value<String> channelDetail;
   const EntriesCompanion({
     this.localId = const Value.absent(),
     this.id = const Value.absent(),
@@ -434,6 +634,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     this.createdAt = const Value.absent(),
     this.place = const Value.absent(),
     this.organizationKind = const Value.absent(),
+    this.bankType = const Value.absent(),
+    this.memberStatus = const Value.absent(),
+    this.productType = const Value.absent(),
+    this.channelType = const Value.absent(),
+    this.channelDetail = const Value.absent(),
   });
   EntriesCompanion.insert({
     this.localId = const Value.absent(),
@@ -445,6 +650,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     this.createdAt = const Value.absent(),
     this.place = const Value.absent(),
     this.organizationKind = const Value.absent(),
+    this.bankType = const Value.absent(),
+    this.memberStatus = const Value.absent(),
+    this.productType = const Value.absent(),
+    this.channelType = const Value.absent(),
+    this.channelDetail = const Value.absent(),
   }) : id = Value(id),
        phone = Value(phone),
        bank = Value(bank),
@@ -460,6 +670,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     Expression<DateTime>? createdAt,
     Expression<String>? place,
     Expression<String>? organizationKind,
+    Expression<String>? bankType,
+    Expression<String>? memberStatus,
+    Expression<String>? productType,
+    Expression<String>? channelType,
+    Expression<String>? channelDetail,
   }) {
     return RawValuesInsertable({
       if (localId != null) 'local_id': localId,
@@ -471,6 +686,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
       if (createdAt != null) 'created_at': createdAt,
       if (place != null) 'place': place,
       if (organizationKind != null) 'organization_kind': organizationKind,
+      if (bankType != null) 'bank_type': bankType,
+      if (memberStatus != null) 'member_status': memberStatus,
+      if (productType != null) 'product_type': productType,
+      if (channelType != null) 'channel_type': channelType,
+      if (channelDetail != null) 'channel_detail': channelDetail,
     });
   }
 
@@ -484,6 +704,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     Value<DateTime?>? createdAt,
     Value<String>? place,
     Value<String>? organizationKind,
+    Value<String>? bankType,
+    Value<String>? memberStatus,
+    Value<String>? productType,
+    Value<String>? channelType,
+    Value<String>? channelDetail,
   }) {
     return EntriesCompanion(
       localId: localId ?? this.localId,
@@ -495,6 +720,11 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
       createdAt: createdAt ?? this.createdAt,
       place: place ?? this.place,
       organizationKind: organizationKind ?? this.organizationKind,
+      bankType: bankType ?? this.bankType,
+      memberStatus: memberStatus ?? this.memberStatus,
+      productType: productType ?? this.productType,
+      channelType: channelType ?? this.channelType,
+      channelDetail: channelDetail ?? this.channelDetail,
     );
   }
 
@@ -528,6 +758,21 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
     if (organizationKind.present) {
       map['organization_kind'] = Variable<String>(organizationKind.value);
     }
+    if (bankType.present) {
+      map['bank_type'] = Variable<String>(bankType.value);
+    }
+    if (memberStatus.present) {
+      map['member_status'] = Variable<String>(memberStatus.value);
+    }
+    if (productType.present) {
+      map['product_type'] = Variable<String>(productType.value);
+    }
+    if (channelType.present) {
+      map['channel_type'] = Variable<String>(channelType.value);
+    }
+    if (channelDetail.present) {
+      map['channel_detail'] = Variable<String>(channelDetail.value);
+    }
     return map;
   }
 
@@ -542,7 +787,12 @@ class EntriesCompanion extends UpdateCompanion<Entry> {
           ..write('entryDate: $entryDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('place: $place, ')
-          ..write('organizationKind: $organizationKind')
+          ..write('organizationKind: $organizationKind, ')
+          ..write('bankType: $bankType, ')
+          ..write('memberStatus: $memberStatus, ')
+          ..write('productType: $productType, ')
+          ..write('channelType: $channelType, ')
+          ..write('channelDetail: $channelDetail')
           ..write(')'))
         .toString();
   }
@@ -918,6 +1168,11 @@ typedef $$EntriesTableCreateCompanionBuilder =
       Value<DateTime?> createdAt,
       Value<String> place,
       Value<String> organizationKind,
+      Value<String> bankType,
+      Value<String> memberStatus,
+      Value<String> productType,
+      Value<String> channelType,
+      Value<String> channelDetail,
     });
 typedef $$EntriesTableUpdateCompanionBuilder =
     EntriesCompanion Function({
@@ -930,6 +1185,11 @@ typedef $$EntriesTableUpdateCompanionBuilder =
       Value<DateTime?> createdAt,
       Value<String> place,
       Value<String> organizationKind,
+      Value<String> bankType,
+      Value<String> memberStatus,
+      Value<String> productType,
+      Value<String> channelType,
+      Value<String> channelDetail,
     });
 
 class $$EntriesTableFilterComposer
@@ -983,6 +1243,31 @@ class $$EntriesTableFilterComposer
 
   ColumnFilters<String> get organizationKind => $composableBuilder(
     column: $table.organizationKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankType => $composableBuilder(
+    column: $table.bankType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get memberStatus => $composableBuilder(
+    column: $table.memberStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channelType => $composableBuilder(
+    column: $table.channelType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channelDetail => $composableBuilder(
+    column: $table.channelDetail,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1040,6 +1325,31 @@ class $$EntriesTableOrderingComposer
     column: $table.organizationKind,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get bankType => $composableBuilder(
+    column: $table.bankType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get memberStatus => $composableBuilder(
+    column: $table.memberStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channelType => $composableBuilder(
+    column: $table.channelType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channelDetail => $composableBuilder(
+    column: $table.channelDetail,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EntriesTableAnnotationComposer
@@ -1077,6 +1387,29 @@ class $$EntriesTableAnnotationComposer
 
   GeneratedColumn<String> get organizationKind => $composableBuilder(
     column: $table.organizationKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bankType =>
+      $composableBuilder(column: $table.bankType, builder: (column) => column);
+
+  GeneratedColumn<String> get memberStatus => $composableBuilder(
+    column: $table.memberStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get channelType => $composableBuilder(
+    column: $table.channelType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get channelDetail => $composableBuilder(
+    column: $table.channelDetail,
     builder: (column) => column,
   );
 }
@@ -1118,6 +1451,11 @@ class $$EntriesTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<String> place = const Value.absent(),
                 Value<String> organizationKind = const Value.absent(),
+                Value<String> bankType = const Value.absent(),
+                Value<String> memberStatus = const Value.absent(),
+                Value<String> productType = const Value.absent(),
+                Value<String> channelType = const Value.absent(),
+                Value<String> channelDetail = const Value.absent(),
               }) => EntriesCompanion(
                 localId: localId,
                 id: id,
@@ -1128,6 +1466,11 @@ class $$EntriesTableTableManager
                 createdAt: createdAt,
                 place: place,
                 organizationKind: organizationKind,
+                bankType: bankType,
+                memberStatus: memberStatus,
+                productType: productType,
+                channelType: channelType,
+                channelDetail: channelDetail,
               ),
           createCompanionCallback:
               ({
@@ -1140,6 +1483,11 @@ class $$EntriesTableTableManager
                 Value<DateTime?> createdAt = const Value.absent(),
                 Value<String> place = const Value.absent(),
                 Value<String> organizationKind = const Value.absent(),
+                Value<String> bankType = const Value.absent(),
+                Value<String> memberStatus = const Value.absent(),
+                Value<String> productType = const Value.absent(),
+                Value<String> channelType = const Value.absent(),
+                Value<String> channelDetail = const Value.absent(),
               }) => EntriesCompanion.insert(
                 localId: localId,
                 id: id,
@@ -1150,6 +1498,11 @@ class $$EntriesTableTableManager
                 createdAt: createdAt,
                 place: place,
                 organizationKind: organizationKind,
+                bankType: bankType,
+                memberStatus: memberStatus,
+                productType: productType,
+                channelType: channelType,
+                channelDetail: channelDetail,
               ),
           withReferenceMapper: (p0) => p0
               .map(

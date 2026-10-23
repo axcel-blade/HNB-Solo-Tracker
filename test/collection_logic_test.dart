@@ -1,75 +1,124 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hnb_solo_tracker/logic/collection_logic.dart';
 import 'package:hnb_solo_tracker/models/collection_entry.dart';
+import 'package:hnb_solo_tracker/models/registration_catalog.dart';
 
 CollectionEntry entry({
   String id = '1',
   String phone = '0771234567',
-  String bank = 'HNB',
-  String category = 'max',
+  String bankType = BankTypes.hnb,
+  String memberStatus = MemberStatuses.oldActive,
+  String productType = ProductTypes.soloMax,
+  String channelType = ChannelTypes.branch,
+  String channelDetail = 'Kandy - Main',
   String entryDate = '2026-10-01',
-  String place = '',
-  String organizationKind = '',
   DateTime? createdAt,
 }) {
   return CollectionEntry(
     id: id,
     phone: phone,
-    bank: bank,
-    category: category,
+    bankType: bankType,
+    memberStatus: memberStatus,
+    productType: productType,
+    channelType: channelType,
+    channelDetail: channelDetail,
     entryDate: entryDate,
-    place: place,
-    organizationKind: organizationKind,
     createdAt: createdAt ?? DateTime.utc(2026, 10, 1, 8),
   );
 }
 
 void main() {
-  test('counts only known categories and sums the grand total', () {
-    final counts = countEntries([
-      entry(category: 'max'),
-      entry(id: '2', category: 'max'),
-      entry(id: '3', category: 'card'),
-      entry(id: '4', category: 'bank'),
-      entry(id: '5', category: 'hnbacc'),
-      entry(id: '6', category: 'unknown'),
+  test('registration stats count bank type and channel', () {
+    final stats = registrationStats([
+      entry(),
+      entry(id: '2', bankType: BankTypes.other, memberStatus: MemberStatuses.card, productType: ProductTypes.external),
+      entry(id: '3', channelType: ChannelTypes.department, channelDetail: 'HNB Tower - Marketing & Sales'),
+      entry(id: '4', channelType: ChannelTypes.ownVisit, channelDetail: 'Direct Own Visit'),
     ]);
-    expect(counts.max, 2);
-    expect(counts.card, 1);
-    expect(counts.bank, 1);
-    expect(counts.hnbAcc, 1);
-    expect(counts.total, 5);
+    expect(stats.total, 4);
+    expect(stats.hnb, 3);
+    expect(stats.other, 1);
+    expect(stats.branches, 2);
+    expect(stats.departments, 1);
+    expect(stats.ownVisits, 1);
+    expect(stats.hnbPercent, '75.0');
   });
 
-  test('phone check trims and requires at least 7 characters', () {
-    expect(checkPhone('   '), PhoneCheck.empty);
-    expect(checkPhone('123456'), PhoneCheck.tooShort);
-    expect(checkPhone('  0771234567  '), PhoneCheck.ok);
+  test('a reference can be a phone number or a short ref', () {
+    expect(registrationError(const RegistrationInput(
+      phone: '   ',
+      bankType: BankTypes.hnb,
+      hnbMemberStatus: MemberStatuses.oldActive,
+      hnbProduct: ProductTypes.soloMax,
+      otherSource: MemberStatuses.card,
+      channelType: ChannelTypes.branch,
+      branch: 'Kandy',
+      department: 'Marketing & Sales',
+      ownVisit: '',
+    )), referenceRequiredMessage);
+    final saved = registrationFrom(
+      const RegistrationInput(
+        phone: ' Ref #1029 ',
+        bankType: BankTypes.other,
+        hnbMemberStatus: MemberStatuses.oldActive,
+        hnbProduct: ProductTypes.soloMax,
+        otherSource: MemberStatuses.account,
+        channelType: ChannelTypes.department,
+        branch: 'Kandy',
+        department: 'Marketing & Sales',
+        ownVisit: '   ',
+      ),
+      createdAt: DateTime.utc(2026, 10, 2, 1),
+    );
+    expect(saved.phone, 'Ref #1029');
+    expect(saved.bankType, BankTypes.other);
+    expect(saved.productType, ProductTypes.external);
+    expect(saved.memberStatus, MemberStatuses.account);
+    expect(saved.channelDetail, 'HNB Tower - Marketing & Sales');
+    final visit = registrationFrom(
+      const RegistrationInput(
+        phone: '0771234567',
+        bankType: BankTypes.hnb,
+        hnbMemberStatus: MemberStatuses.newActive,
+        hnbProduct: ProductTypes.hnbAcc,
+        otherSource: MemberStatuses.card,
+        channelType: ChannelTypes.ownVisit,
+        branch: 'Kandy',
+        department: 'Marketing & Sales',
+        ownVisit: '',
+      ),
+    );
+    expect(visit.channelDetail, 'Direct Own Visit');
+    expect(visit.productType, ProductTypes.hnbAcc);
+    expect(allHnbBranches(), hasLength(256));
+    expect(allHnbBranches().first, 'HNB Negombo Main Branch');
   });
 
-  test('export range is inclusive and rejects an inverted range', () {
+  test('export range is inclusive and requires both dates', () {
     final entries = [
       entry(entryDate: '2026-10-01'),
       entry(id: '2', entryDate: '2026-10-15', phone: '0770000000'),
       entry(id: '3', entryDate: '2026-10-31', phone: '0771111111'),
     ];
-    final inverted = buildExport(entries, from: '2026-10-20', to: '2026-10-01');
-    expect(inverted.error, dateOrderMessage);
+    expect(
+      buildReport(entries, from: '', to: '').error,
+      exportDatesRequiredMessage,
+    );
+    expect(
+      buildReport(entries, from: '2026-10-20', to: '2026-10-01').error,
+      dateOrderMessage,
+    );
 
-    final ranged = buildExport(entries, from: '2026-10-15', to: '2026-10-31');
+    final ranged = buildReport(entries, from: '2026-10-15', to: '2026-10-31');
     expect(ranged.error, isNull);
     expect(ranged.count, 2);
-    expect(ranged.filename, 'solo-collection-2026-10-15-to-2026-10-31.csv');
+    expect(ranged.filename('csv'), 'HNB_Solo_Report_2026-10-15_to_2026-10-31.csv');
     expect(ranged.csv, contains('0770000000'));
     expect(ranged.csv, isNot(contains('0771234567')));
-
-    final all = buildExport(entries, from: '', to: '');
-    expect(all.count, 3);
-    expect(all.filename, 'solo-collection-all-to-all.csv');
-    expect(all.csv!.startsWith('\uFEFF'), isTrue);
+    expect(ranged.json, contains('0771111111'));
   });
 
-  test('csv keeps quotes, commas, and skips matching duplicates', () {
+  test('csv keeps quotes and skips matching duplicates', () {
     final original = entry(phone: '077"123,4567');
     final csv = toCsv([original]);
     expect(csv, contains('"077""123,4567"'));
@@ -82,12 +131,12 @@ void main() {
     final fresh = mergeCsv(const [], csv);
     expect(fresh.imported, 1);
     expect(fresh.entries.single.phone, '077"123,4567');
-    expect(fresh.entries.single.category, 'max');
-    expect(fresh.entries.single.bank, 'HNB');
-    expect(fresh.entries.single.entryDate, '2026-10-01');
+    expect(fresh.entries.single.productType, ProductTypes.soloMax);
+    expect(fresh.entries.single.bankType, BankTypes.hnb);
+    expect(fresh.entries.single.channelDetail, 'Kandy - Main');
   });
 
-  test('csv import keeps existing rows and drops invalid ones', () {
+  test('legacy csv import maps old categories and drops invalid rows', () {
     const csv =
         'Phone number,Bank,Category,Entry date,Saved date and time\r\n'
         '"0710000000","Other Bank","Credit/Debit","2026-09-01",""\r\n'
@@ -101,26 +150,24 @@ void main() {
     expect(result.skippedDuplicates, 1);
     expect(result.skippedInvalid, 2);
     expect(result.entries, hasLength(3));
-    expect(result.entries[1].category, 'card');
-    expect(result.entries[1].bank, 'Other Bank');
-    expect(result.entries[2].bank, 'Commercial Bank');
-    expect(result.entries[2].category, 'max');
+    expect(result.entries[1].memberStatus, MemberStatuses.card);
+    expect(result.entries[1].bankType, BankTypes.other);
+    expect(result.entries[1].productType, ProductTypes.external);
+    expect(result.entries[2].channelDetail, 'Commercial Bank');
     expect(result.message, contains('Imported 2'));
   });
 
-  test('csv keeps the branch and rejects HNB on another organization', () {
+  test('legacy place csv keeps the branch and rejects a mismatched kind', () {
     final original = entry(
       phone: '0771234567',
-      bank: 'HNB',
-      place: 'Kandy',
-      organizationKind: 'hnb',
+      channelType: ChannelTypes.branch,
+      channelDetail: 'Kandy',
     );
     final csv = toCsv([original]);
     final merged = mergeCsv(const [], csv);
     expect(merged.imported, 1);
-    expect(merged.entries.single.place, 'Kandy');
-    expect(merged.entries.single.organizationKind, 'hnb');
-    expect(merged.entries.single.bank, 'HNB');
+    expect(merged.entries.single.channelDetail, 'Kandy');
+    expect(merged.entries.single.bankType, BankTypes.hnb);
 
     const wrong =
         'Phone number,Bank,Place,Kind,Category,Entry date,Saved date and time\r\n'
@@ -130,10 +177,10 @@ void main() {
     expect(rejected.skippedInvalid, 1);
   });
 
-  test('json backup replaces with valid rows only', () {
+  test('json backup keeps valid registration rows and maps older backups', () {
     final raw = '''
     [
-      {"phone":"0771234567","bank":"HNB","category":"hnbacc","entryDate":"2026-10-02","createdAt":"2026-10-02T01:02:03.000Z"},
+      {"phoneNumber":"0771234567","bankType":"HNB","memberStatus":"New Active Member","productType":"HNB ACC","channelType":"Branch","channelDetail":"Kandy - Main","timestamp":"2026-10-02T01:02:03.000Z","entryDate":"2026-10-02"},
       {"phone":1,"bank":"HNB","category":"max"},
       {"phone":"0770000000","bank":"","category":"max"},
       {"phone":"0770000001","bank":"HNB","category":"max","organizationKind":"company"},
@@ -143,11 +190,12 @@ void main() {
     final parsed = parseBackup(raw);
     expect(parsed, isNotNull);
     expect(parsed, hasLength(2));
-    expect(parsed!.first.category, 'hnbacc');
+    expect(parsed!.first.productType, ProductTypes.hnbAcc);
+    expect(parsed.first.memberStatus, MemberStatuses.newActive);
     expect(parsed.first.entryDate, '2026-10-02');
-    expect(parsed.last.bank, 'Commercial Bank');
-    expect(parsed.last.place, 'Kandy');
-    expect(parsed.last.organizationKind, 'bank');
+    expect(parsed.last.bankType, BankTypes.other);
+    expect(parsed.last.channelDetail, 'Kandy');
+    expect(parsed.last.channelType, ChannelTypes.ownVisit);
     expect(parseBackup('{"phone":"x"}'), isNull);
     expect(parseBackup('not json'), isNull);
   });
@@ -156,5 +204,7 @@ void main() {
     final stored = [entry(id: 'old'), entry(id: 'new')];
     expect(newestFirst(stored).map((item) => item.id), ['new', 'old']);
     expect(stored.map((item) => item.id), ['old', 'new']);
+    expect(filterRecords(stored, 'kandy').map((item) => item.id), ['new', 'old']);
+    expect(filterRecords(stored, 'missing'), isEmpty);
   });
 }

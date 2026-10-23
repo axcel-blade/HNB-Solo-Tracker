@@ -34,6 +34,46 @@ class AppColors {
   static const focusRing = Color(0x182463EB);
 }
 
+class PortalColors {
+  const PortalColors._();
+
+  static const blue = Color(0xFF002B66);
+  static const darkBlue = Color(0xFF001A40);
+  static const gold = Color(0xFFFFC72C);
+  static const goldHover = Color(0xFFE5B220);
+  static const bg = Color(0xFF020617);
+  static const card = Color(0xFF0F172A);
+  static const line = Color(0xFF1E293B);
+  static const input = Color(0xFF020617);
+  static const inputBorder = Color(0xFF334155);
+  static const muted = Color(0xFF94A3B8);
+  static const faint = Color(0xFF64748B);
+  static const text = Color(0xFFF8FAFC);
+  static const purple = Color(0xFFC084FC);
+  static const amber = Color(0xFFFBBF24);
+  static const emerald = Color(0xFF34D399);
+  static const pink = Color(0xFFF472B6);
+  static const blueStat = Color(0xFF60A5FA);
+  static const rose = Color(0xFFFB7185);
+}
+
+ThemeData buildPortalTheme() {
+  final base = ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: PortalColors.bg,
+    colorScheme: const ColorScheme.dark(
+      primary: PortalColors.gold,
+      surface: PortalColors.card,
+      onSurface: PortalColors.text,
+    ),
+  );
+  return base.copyWith(
+    textTheme: GoogleFonts.interTextTheme(base.textTheme),
+    splashFactory: NoSplash.splashFactory,
+  );
+}
+
 BoxDecoration panelDecoration({double radius = 16}) {
   return BoxDecoration(
     color: Colors.white,
