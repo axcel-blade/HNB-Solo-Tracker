@@ -27,19 +27,3 @@ class SoloCategory {
 
   static String labelFor(String id) => byId(id)?.name ?? id;
 }
-
-class BankOption {
-  const BankOption(this.name, this.description);
-
-  final String name;
-  final String description;
-
-  static const other = BankOption(
-    'Other Bank',
-    'Use for a bank other than HNB.',
-  );
-  static const hnb = BankOption('HNB', 'Hatton National Bank.');
-
-  static const all = [other, hnb];
-  static const names = {'Other Bank', 'HNB'};
-}

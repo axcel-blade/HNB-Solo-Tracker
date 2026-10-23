@@ -19,6 +19,9 @@ class AddPanel extends StatelessWidget {
     required this.onClearExportFrom,
     required this.onClearExportTo,
     required this.onContinue,
+    required this.siteHeadline,
+    required this.siteDetail,
+    required this.onChangeSite,
     required this.onExport,
     required this.onJsonBackup,
     required this.onImportCsv,
@@ -37,6 +40,9 @@ class AddPanel extends StatelessWidget {
   final VoidCallback onClearExportFrom;
   final VoidCallback onClearExportTo;
   final VoidCallback onContinue;
+  final String? siteHeadline;
+  final String siteDetail;
+  final VoidCallback onChangeSite;
   final VoidCallback onExport;
   final VoidCallback onJsonBackup;
   final VoidCallback onImportCsv;
@@ -65,7 +71,7 @@ class AddPanel extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Enter a phone number and date, then choose the options.',
+                  'Register the phone numbers you collected at a branch or company.',
                   style: TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
               ],
@@ -76,6 +82,12 @@ class AddPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _SiteCard(
+                  headline: siteHeadline,
+                  detail: siteDetail,
+                  onChange: onChangeSite,
+                ),
+                const SizedBox(height: 14),
                 LabeledField(
                   label: 'Phone number',
                   hint: 'Numbers are stored exactly as entered.',
@@ -124,7 +136,11 @@ class AddPanel extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 18),
-                  child: Divider(height: 1, thickness: 1, color: AppColors.line),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppColors.line,
+                  ),
                 ),
                 DateField(
                   label: 'Export from date',
@@ -174,7 +190,11 @@ class AddPanel extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 18),
-                  child: Divider(height: 1, thickness: 1, color: AppColors.line),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppColors.line,
+                  ),
                 ),
                 AppButton(
                   label: 'Clear all entries',
@@ -186,6 +206,64 @@ class AddPanel extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SiteCard extends StatelessWidget {
+  const _SiteCard({
+    required this.headline,
+    required this.detail,
+    required this.onChange,
+  });
+
+  final String? headline;
+  final String detail;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final chosen = headline != null;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: chosen ? AppColors.choiceSelected : AppColors.noticeBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: chosen ? AppColors.blue : AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              chosen ? 'Collecting at' : 'Collection site',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: AppColors.blue,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              headline ?? 'No branch or company selected',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              detail,
+              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+            ),
+            const SizedBox(height: 10),
+            AppButton(
+              label: chosen ? 'Change place' : 'Choose place',
+              kind: chosen ? AppButtonKind.outline : AppButtonKind.primary,
+              compact: true,
+              onPressed: onChange,
+            ),
+          ],
+        ),
       ),
     );
   }

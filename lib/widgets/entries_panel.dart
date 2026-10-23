@@ -27,13 +27,14 @@ class EntriesPanel extends StatelessWidget {
         children: [
           const _PanelHead(
             title: 'Collection entries',
-            subtitle: 'Every saved phone number appears in its selected category.',
+            subtitle:
+                'Each number stays with the branch or company where it was collected.',
             trailing: _AutoSaved(),
           ),
           LayoutBuilder(
             builder: (context, constraints) {
-              final tableWidth = constraints.maxWidth < 570
-                  ? 570.0
+              final tableWidth = constraints.maxWidth < 640
+                  ? 640.0
                   : constraints.maxWidth;
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -73,7 +74,10 @@ class EntriesPanel extends StatelessWidget {
                         )
                       else
                         for (final entry in rows)
-                          _EntryRow(entry: entry, onDelete: () => onDelete(entry)),
+                          _EntryRow(
+                            entry: entry,
+                            onDelete: () => onDelete(entry),
+                          ),
                     ],
                   ),
                 ),
@@ -231,7 +235,10 @@ class _EntryRow extends StatelessWidget {
             Expanded(
               flex: 16,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 child: Text(
                   entry.phone,
                   style: const TextStyle(
@@ -246,30 +253,48 @@ class _EntryRow extends StatelessWidget {
               flex: 12,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: hnb ? AppColors.tagHnbBg : AppColors.tagBg,
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Text(
-                      entry.bank,
-                      style: TextStyle(
-                        color: hnb ? AppColors.tagHnbFg : AppColors.tagFg,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: hnb ? AppColors.tagHnbBg : AppColors.tagBg,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        entry.bank,
+                        style: TextStyle(
+                          color: hnb ? AppColors.tagHnbFg : AppColors.tagFg,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
+                    if (entry.place.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        entry.place,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
             Expanded(
               flex: 16,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 child: Text(
                   SoloCategory.labelFor(entry.category),
                   style: const TextStyle(fontSize: 13),
@@ -279,7 +304,10 @@ class _EntryRow extends StatelessWidget {
             Expanded(
               flex: 14,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 child: Text(
                   displayWhen(entry),
                   style: const TextStyle(fontSize: 13),
