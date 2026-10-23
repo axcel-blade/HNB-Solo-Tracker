@@ -2,7 +2,9 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hnb_solo_tracker/database/app_database.dart';
 import 'package:hnb_solo_tracker/logic/collection_logic.dart';
+import 'package:hnb_solo_tracker/logic/place_routing.dart';
 import 'package:hnb_solo_tracker/models/collection_entry.dart';
+import 'package:hnb_solo_tracker/models/place.dart';
 import 'package:hnb_solo_tracker/services/tracker_store.dart';
 
 Future<TrackerStore> openStore(AppDatabase database) async {
@@ -110,5 +112,91 @@ void main() {
     await afterImport.clear();
     final afterClear = await openStore(database);
     expect(afterClear.entries, isEmpty);
+  });
+
+  test('HNB branches stay separate from other banks and companies', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final store = await openStore(database);
+
+    final hnbKandy = store.places.singleWhere(
+      (place) => place.kind == OrganizationKind.hnb && place.name == 'Kandy',
+    );
+    expect(hnbKandy.organization, 'HNB');
+    expect(
+      store.places.where(
+        (place) => place.kind != OrganizationKind.hnb && place.name == 'Kandy',
+      ),
+      isEmpty,
+    );
+
+    final added = await store.addPlace(
+      kind: OrganizationKind.bank,
+      organization: 'Commercial Bank',
+      name: 'Kandy',
+    );
+    expect(added.error, isNull);
+    expect(added.place!.builtIn, isFalse);
+    expect(routePlace(added.place!)!.bank, 'Commercial Bank');
+
+    final blocked = await store.addPlace(
+      kind: OrganizationKind.company,
+      organization: 'HNB',
+      name: 'Colombo',
+    );
+    expect(blocked.error, useHnbTabMessage);
+
+    final saved = await store.add(
+      phone: '0771234567',
+      bank: 'Commercial Bank',
+      category: 'card',
+      entryDate: '2026-10-02',
+      place: 'Kandy',
+      organizationKind: 'bank',
+      id: 'visit',
+    );
+    expect(saved, isNull);
+    final rejected = await store.add(
+      phone: '0771234567',
+      bank: 'HNB',
+      category: 'max',
+      entryDate: '2026-10-02',
+      place: 'Kandy',
+      organizationKind: 'bank',
+    );
+    expect(rejected, hnbRouteMessage);
+
+    final reloaded = await openStore(database);
+    expect(reloaded.entries.single.place, 'Kandy');
+    expect(reloaded.entries.single.bank, 'Commercial Bank');
+    expect(
+      reloaded.places.any(
+        (place) =>
+            place.kind == OrganizationKind.bank &&
+            place.organization == 'Commercial Bank' &&
+            place.name == 'Kandy' &&
+            !place.builtIn,
+      ),
+      isTrue,
+    );
+
+    final customId = reloaded.places
+        .singleWhere(
+          (place) =>
+              place.organization == 'Commercial Bank' && place.name == 'Kandy',
+        )
+        .id!;
+    expect(await reloaded.deletePlace(customId), isNull);
+    expect(
+      await reloaded.deletePlace(hnbKandy.id!),
+      'Built-in places stay in the list.',
+    );
+    final afterDelete = await openStore(database);
+    expect(
+      afterDelete.places.any(
+        (place) => place.name == 'Kandy' && !place.builtIn,
+      ),
+      isFalse,
+    );
   });
 }

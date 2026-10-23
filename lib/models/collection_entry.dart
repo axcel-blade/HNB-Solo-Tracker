@@ -10,6 +10,8 @@ class CollectionEntry {
     required this.category,
     required this.entryDate,
     required this.createdAt,
+    this.place = '',
+    this.organizationKind = '',
   });
 
   final String id;
@@ -18,6 +20,8 @@ class CollectionEntry {
   final String category;
   final String entryDate;
   final DateTime? createdAt;
+  final String place;
+  final String organizationKind;
 
   Map<String, dynamic> toJson() {
     return {
@@ -26,8 +30,9 @@ class CollectionEntry {
       'bank': bank,
       'category': category,
       'entryDate': entryDate,
-      if (createdAt != null)
-        'createdAt': createdAt!.toUtc().toIso8601String(),
+      'place': place,
+      'organizationKind': organizationKind,
+      if (createdAt != null) 'createdAt': createdAt!.toUtc().toIso8601String(),
     };
   }
 
@@ -42,21 +47,41 @@ class CollectionEntry {
       category: json['category']?.toString() ?? '',
       entryDate: json['entryDate']?.toString() ?? '',
       createdAt: createdRaw == null ? null : DateTime.tryParse(createdRaw),
+      place: json['place']?.toString() ?? '',
+      organizationKind: json['organizationKind']?.toString() ?? '',
     );
   }
 
-  /// Accepts a backup object the way the reference site does:
-  /// phone must be a string, bank must be HNB or Other Bank, and category
-  /// must be a known id.
-  static CollectionEntry? tryImport(dynamic raw, {DateTime? fallbackCreatedAt}) {
+  /// Accepts a backup object when the phone and bank are text and the
+  /// category is a known id. HNB is kept only for HNB-branch rows.
+  static CollectionEntry? tryImport(
+    dynamic raw, {
+    DateTime? fallbackCreatedAt,
+  }) {
     if (raw is! Map) return null;
     final json = raw.map((key, value) => MapEntry(key.toString(), value));
     final phone = json['phone'];
     final bank = json['bank'];
     final category = json['category'];
     if (phone is! String) return null;
-    if (bank is! String || !BankOption.names.contains(bank)) return null;
+    if (bank is! String || bank.trim().isEmpty || bank.trim().length > 80) {
+      return null;
+    }
     if (category is! String || SoloCategory.byId(category) == null) return null;
+    final place = json['place'];
+    if (place != null && place is! String) return null;
+    final kindRaw = json['organizationKind'];
+    if (kindRaw != null && kindRaw is! String) return null;
+    final kind = kindRaw is String ? kindRaw : '';
+    if (kind.isNotEmpty &&
+        kind != 'hnb' &&
+        kind != 'bank' &&
+        kind != 'company') {
+      return null;
+    }
+    final bankName = bank.trim();
+    if (kind == 'hnb' && bankName != 'HNB') return null;
+    if ((kind == 'bank' || kind == 'company') && bankName == 'HNB') return null;
     final createdRaw = json['createdAt'];
     DateTime? createdAt;
     if (createdRaw is String) {
@@ -67,10 +92,12 @@ class CollectionEntry {
     return CollectionEntry(
       id: _idOf(json['id']),
       phone: phone,
-      bank: bank,
+      bank: bankName,
       category: category,
       entryDate: entryDate is String ? entryDate : '',
       createdAt: createdAt,
+      place: place is String ? place.trim() : '',
+      organizationKind: kind,
     );
   }
 

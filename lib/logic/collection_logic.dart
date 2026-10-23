@@ -10,11 +10,20 @@ const saveFailedMessage =
 const phoneTooShortMessage = 'Please check the phone number and try again.';
 const dateOrderMessage = 'The start date must be before the end date.';
 const emptyRangeMessage = 'No entries found in the selected date range.';
-const invalidJsonMessage =
-    'Could not import. Choose a valid JSON backup file.';
+const invalidJsonMessage = 'Could not import. Choose a valid JSON backup file.';
 const invalidCsvMessage = 'Could not import. Choose a valid CSV file.';
 
 const csvHeader = [
+  'Phone number',
+  'Bank',
+  'Place',
+  'Kind',
+  'Category',
+  'Entry date',
+  'Saved date and time',
+];
+
+const legacyCsvHeader = [
   'Phone number',
   'Bank',
   'Category',
@@ -171,12 +180,14 @@ ExportBuild buildExport(
   if (from.isNotEmpty && to.isNotEmpty && from.compareTo(to) > 0) {
     return const ExportBuild.fail(dateOrderMessage);
   }
-  final filtered = entries.where((entry) {
-    final date = effectiveDate(entry);
-    if (from.isNotEmpty && date.compareTo(from) < 0) return false;
-    if (to.isNotEmpty && date.compareTo(to) > 0) return false;
-    return true;
-  }).toList(growable: false);
+  final filtered = entries
+      .where((entry) {
+        final date = effectiveDate(entry);
+        if (from.isNotEmpty && date.compareTo(from) < 0) return false;
+        if (to.isNotEmpty && date.compareTo(to) > 0) return false;
+        return true;
+      })
+      .toList(growable: false);
   if (filtered.isEmpty) return const ExportBuild.fail(emptyRangeMessage);
   final start = from.isEmpty ? 'all' : from;
   final end = to.isEmpty ? 'all' : to;
@@ -194,6 +205,8 @@ String toCsv(List<CollectionEntry> entries) {
       [
         entry.phone,
         entry.bank,
+        entry.place,
+        entry.organizationKind,
         SoloCategory.labelFor(entry.category),
         entry.entryDate,
         entry.createdAt == null ? '' : formatSavedAt(entry.createdAt!),
@@ -204,9 +217,7 @@ String toCsv(List<CollectionEntry> entries) {
 }
 
 String _csvRow(List<String> cells) {
-  return cells
-      .map((value) => '"${value.replaceAll('"', '""')}"')
-      .join(',');
+  return cells.map((value) => '"${value.replaceAll('"', '""')}"').join(',');
 }
 
 List<List<String>> parseCsv(String source) {
@@ -290,8 +301,12 @@ CsvMergeResult mergeCsv(List<CollectionEntry> existing, String source) {
   }
 
   var data = rows;
+  var legacy = false;
   final first = rows.first.map((cell) => cell.trim()).toList();
-  if (first.isNotEmpty && first.first == csvHeader.first) {
+  if (_sameHeader(first, csvHeader)) {
+    data = rows.skip(1).toList();
+  } else if (_sameHeader(first, legacyCsvHeader)) {
+    legacy = true;
     data = rows.skip(1).toList();
   }
 
@@ -303,7 +318,7 @@ CsvMergeResult mergeCsv(List<CollectionEntry> existing, String source) {
 
   for (final row in data) {
     if (row.every((cell) => cell.trim().isEmpty)) continue;
-    final entry = _entryFromCsvRow(row);
+    final entry = _entryFromCsvRow(row, legacy: legacy);
     if (entry == null) {
       invalid++;
       continue;
@@ -327,22 +342,72 @@ CsvMergeResult mergeCsv(List<CollectionEntry> existing, String source) {
   );
 }
 
-CollectionEntry? _entryFromCsvRow(List<String> row) {
+bool _sameHeader(List<String> row, List<String> header) {
+  if (row.length < header.length) return false;
+  for (var index = 0; index < header.length; index++) {
+    if (row[index] != header[index]) return false;
+  }
+  return true;
+}
+
+bool _isCategory(String value) {
+  return SoloCategory.byId(value) != null || SoloCategory.byName(value) != null;
+}
+
+CollectionEntry? _entryFromCsvRow(List<String> row, {required bool legacy}) {
   if (row.length < 3) return null;
   final phone = row[0].trim();
   final bank = row[1].trim();
-  final categoryCell = row[2].trim();
-  if (phone.isEmpty || !BankOption.names.contains(bank)) return null;
+  if (phone.isEmpty || bank.isEmpty || bank.length > 80) return null;
+
+  final categoryAtTwo = _isCategory(row[2].trim());
+  final useLegacy = legacy || (categoryAtTwo && row.length < 6);
+  if (useLegacy) {
+    if (!categoryAtTwo) return null;
+    return _entryFromCells(
+      phone: phone,
+      bank: bank,
+      place: '',
+      kind: '',
+      categoryCell: row[2].trim(),
+      entryDate: row.length > 3 ? row[3].trim() : '',
+      savedAt: row.length > 4 ? row[4].trim() : '',
+    );
+  }
+
+  if (row.length < 5 || !_isCategory(row[4].trim())) return null;
+  final kind = row[3].trim();
+  if (kind == 'hnb' && bank != 'HNB') return null;
+  if ((kind == 'bank' || kind == 'company') && bank == 'HNB') return null;
+  if (kind.isNotEmpty && kind != 'hnb' && kind != 'bank' && kind != 'company') {
+    return null;
+  }
+  return _entryFromCells(
+    phone: phone,
+    bank: bank,
+    place: row[2].trim(),
+    kind: kind,
+    categoryCell: row[4].trim(),
+    entryDate: row.length > 5 ? row[5].trim() : '',
+    savedAt: row.length > 6 ? row[6].trim() : '',
+  );
+}
+
+CollectionEntry? _entryFromCells({
+  required String phone,
+  required String bank,
+  required String place,
+  required String kind,
+  required String categoryCell,
+  required String entryDate,
+  required String savedAt,
+}) {
   final category =
       SoloCategory.byId(categoryCell) ?? SoloCategory.byName(categoryCell);
   if (category == null) return null;
-  final entryDate = row.length > 3 ? row[3].trim() : '';
-  if (entryDate.isNotEmpty && !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(entryDate)) {
+  if (entryDate.isNotEmpty &&
+      !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(entryDate)) {
     return null;
-  }
-  DateTime? createdAt;
-  if (row.length > 4 && row[4].trim().isNotEmpty) {
-    createdAt = DateTime.tryParse(row[4].trim());
   }
   return CollectionEntry(
     id: newEntryId(),
@@ -350,12 +415,15 @@ CollectionEntry? _entryFromCsvRow(List<String> row) {
     bank: bank,
     category: category.id,
     entryDate: entryDate,
-    createdAt: createdAt,
+    createdAt: savedAt.isEmpty ? null : DateTime.tryParse(savedAt),
+    place: place,
+    organizationKind: kind,
   );
 }
 
 String duplicateKey(CollectionEntry entry) {
-  return '${entry.phone}\u0000${entry.bank}\u0000${entry.category}\u0000${entry.entryDate}';
+  return '${entry.phone}\u0000${entry.bank}\u0000${entry.place}\u0000'
+      '${entry.category}\u0000${entry.entryDate}';
 }
 
 String encodeBackup(List<CollectionEntry> entries) {
@@ -377,9 +445,7 @@ List<CollectionEntry>? parseBackup(String source) {
     return null;
   }
   if (data is! List) return null;
-  return [
-    for (final item in data) ?CollectionEntry.tryImport(item),
-  ];
+  return [for (final item in data) ?CollectionEntry.tryImport(item)];
 }
 
 List<CollectionEntry> decodeStored(String? raw) {
@@ -387,9 +453,7 @@ List<CollectionEntry> decodeStored(String? raw) {
   try {
     final data = jsonDecode(raw);
     if (data is! List) return [];
-    return [
-      for (final item in data) ?CollectionEntry.fromLoose(item),
-    ];
+    return [for (final item in data) ?CollectionEntry.fromLoose(item)];
   } catch (_) {
     return [];
   }
