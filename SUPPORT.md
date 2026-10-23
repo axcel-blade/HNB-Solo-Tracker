@@ -9,8 +9,8 @@
 
 ## When asking for help, include
 
-- App version (bottom bar of the app)
-- Windows version
+- App version (`version` in `pubspec.yaml`)
+- Platform: Android, iOS, web, Windows, macOS, or Linux, and the OS version
 - What you did, what you expected, and what happened
 - A screenshot if possible
 

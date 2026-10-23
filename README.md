@@ -1,77 +1,88 @@
-<p align="center">
-  <img src="assets/icon.png" width="96" alt="HNB Solo Tracker icon">
-</p>
+# HNB Solo Tracker
 
-<h1 align="center">HNB Solo Tracker</h1>
+A Flutter app for logging Solo collection entries. The package name is `hnb_solo_tracker`. The screen title is **Solo Collection Tracker**.
 
-<p align="center">
-  A fast Windows desktop app for logging and counting HNB Solo sign-ups.<br>
-  Built with Rust, egui and SQLite.
-</p>
+It runs from one codebase on Android, iOS, web, Windows, macOS, and Linux. Entries stay on the device in a Drift SQLite database.
 
-<p align="center">
-  <a href="https://github.com/axcel-blade/HNB-Solo-Tracker/releases/latest"><img src="https://img.shields.io/github/v/release/axcel-blade/HNB-Solo-Tracker" alt="Latest release"></a>
-  <a href="https://github.com/axcel-blade/HNB-Solo-Tracker/actions/workflows/ci.yml"><img src="https://github.com/axcel-blade/HNB-Solo-Tracker/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/platform-Windows-0060AF" alt="Windows">
-  <img src="https://img.shields.io/badge/rust-stable-00A2E8" alt="Rust">
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-2C2F31" alt="MIT"></a>
-</p>
+This is an independent tool and is not an official product of Hatton National Bank PLC.
 
----
+## What it does
 
-## Features
+- Enter a phone number (trimmed, 7–20 characters) and an entry date.
+- Choose **Other Bank** or **HNB**, then a category: **Solo Max**, **Credit/Debit**, **Other Bank acc**, or **HNB ACC**.
+- Live counts for those four categories and a **Grand Total**.
+- A newest-first list, per-row delete, and an empty state.
+- CSV export for a date range (leave both dates blank to export everything).
+- JSON backup, JSON import that replaces the current entries after you confirm, and CSV import that keeps existing rows and skips duplicates (same phone, bank, category, and entry date).
+- **Clear all entries** after confirmation.
 
-- **Three-step entry**: type a phone number, pick the bank, pick the product. Works from the keyboard alone (`Enter`, `1`/`2`/`3`, `Esc`, `Backspace`).
-- **Three columns**: Solo Max, Solo Credit/Debit Card and Solo Bank Acc, each with a live count.
-- **Count cards**: totals per product with an HNB / Other Bank split, plus a grand total.
-- **Transactions log**: every entry with date and time, searchable by phone number, with delete.
-- **Duplicate warning**: flags a number already recorded under the same product.
-- **CSV export**: all transactions plus a summary table; leading zeros are kept in Excel.
-- **Local SQLite storage**: nothing leaves your PC.
-- **Auto-update**: checks GitHub Releases at start-up and installs new versions in one click.
-- **HNB look**: colours taken from [hnb.lk](https://www.hnb.lk/), Phosphor icons.
+## Requirements
 
-## Install
+- Flutter stable with Dart `3.12.2` or newer (`environment.sdk` in `pubspec.yaml`)
+- For a device build: the usual Android SDK, Xcode (iOS and macOS), or a Linux desktop toolchain
 
-**Installer (recommended):** download `HNB-Solo-Tracker-Setup-vX.Y.Z.exe` from [Releases](https://github.com/axcel-blade/HNB-Solo-Tracker/releases/latest) and run it. It installs for the current user (no admin rights needed), adds Start Menu and optional desktop shortcuts, and can be removed from **Settings → Apps**.
+Verified on this Windows machine with Flutter 3.44.3: `flutter analyze`, `flutter test` (12 tests), and `flutter build windows`. macOS, iOS, and Linux were not compiled here.
 
-**Portable:** download `hnb-solo-tracker-vX.Y.Z-windows-x64.exe` and run it from anywhere.
-
-Windows SmartScreen may warn about an unsigned app the first time; choose **More info → Run anyway**.
-
-## Usage
-
-1. Type a phone number (9–12 digits) and press **Enter**.
-2. Choose **HNB** or **Other Bank** (click, or press `1` / `2`).
-3. Choose **Solo Max**, **Solo Credit/Debit Card** or **Solo Bank Acc** (click, or press `1` / `2` / `3`).
-
-The number appears in the matching column and the counts update. Use **Export CSV** to save a report.
-
-## Data location
-
-| Item | Path |
-|---|---|
-| Database | `%APPDATA%\HNB Solo Tracker\hnb_solo_tracker.db` |
-
-See [docs/DATABASE.md](docs/DATABASE.md) for the schema.
-
-## Build from source
+## Run
 
 ```bash
-cargo build --release
+flutter pub get
+flutter run -d chrome
+flutter run -d windows
+flutter run -d android
 ```
 
-The executable is written to `target/release/hnb-solo-tracker.exe`.
+On a Mac:
+
+```bash
+flutter run -d ios
+flutter run -d macos
+```
+
+On Linux:
+
+```bash
+flutter run -d linux
+```
+
+`flutter devices` lists the targets this machine can launch.
+
+A Windows release build is written to `build/windows/x64/runner/Release/hnb_solo_tracker.exe`:
+
+```bash
+flutter build windows
+```
+
+## Data
+
+Native mobile and desktop store `solo_collection.sqlite` in the application documents directory (`getApplicationDocumentsDirectory`). On Windows that is `%USERPROFILE%\Documents\solo_collection.sqlite`.
+
+The browser uses the same Drift API with `web/sqlite3.wasm` and `web/drift_worker.js`. The database name is `solo_collection` (IndexedDB, or OPFS when the browser supports it). Nothing is uploaded.
+
+See [docs/DATABASE.md](docs/DATABASE.md).
+
+## Checks
+
+```bash
+flutter analyze
+flutter test
+```
+
+After a schema change, regenerate Drift code:
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
 
 ## Documentation
 
 | Document | Description |
 |---|---|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the app is structured |
-| [docs/DATABASE.md](docs/DATABASE.md) | SQLite schema and queries |
-| [docs/RELEASING.md](docs/RELEASING.md) | Publishing a new version |
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Step-by-step guide for staff |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching (Git Flow) and pull requests |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to enter, export, import, and delete |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout and how an entry is saved |
+| [docs/DATABASE.md](docs/DATABASE.md) | Drift schema and where the file lives |
+| [docs/RELEASING.md](docs/RELEASING.md) | Versioning a release by hand |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Git Flow and pull requests |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 | [SECURITY.md](SECURITY.md) | Reporting vulnerabilities |
 | [SUPPORT.md](SUPPORT.md) | Getting help |
@@ -79,5 +90,3 @@ The executable is written to `target/release/hnb-solo-tracker.exe`.
 ## License
 
 [MIT](LICENSE.md) © 2026 AXCEL BLADE
-
-> This is an independent tool and is not an official product of Hatton National Bank PLC.
