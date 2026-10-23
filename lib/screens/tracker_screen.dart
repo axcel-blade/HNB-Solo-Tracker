@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../logic/collection_logic.dart';
+import '../logic/place_routing.dart';
+import '../models/place.dart';
+import '../services/app_update.dart';
 import '../services/file_exchange.dart';
+import '../services/release_link.dart';
 import '../services/tracker_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/add_panel.dart';
@@ -11,15 +15,19 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/entries_panel.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/options_dialog.dart';
+import '../widgets/update_dialog.dart';
+import 'settings_screen.dart';
 
 class TrackerScreen extends StatefulWidget {
   const TrackerScreen({
     super.key,
     required this.store,
+    required this.updates,
     this.files = const FileExchange(),
   });
 
   final TrackerStore store;
+  final UpdateChecker updates;
   final FileExchange files;
 
   @override
@@ -32,6 +40,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
   late DateTime _entryDate;
   DateTime? _exportFrom;
   DateTime? _exportTo;
+  CollectionPlace? _site;
   String? _toast;
   Timer? _toastTimer;
 
@@ -42,12 +51,26 @@ class _TrackerScreenState extends State<TrackerScreen> {
     _entryDate = DateTime(now.year, now.month, now.day);
     widget.store.addListener(_onStore);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _phoneFocus.requestFocus();
+      if (!mounted) return;
+      _phoneFocus.requestFocus();
+      unawaited(_announceUpdate());
     });
   }
 
+  Future<void> _announceUpdate() async {
+    final result = await widget.updates.check();
+    if (!mounted || result.status != UpdateStatus.available) return;
+    await showUpdateDialog(context, result);
+  }
+
   void _onStore() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {
+      final siteId = _site?.id;
+      if (siteId == null) return;
+      final match = widget.store.places.where((place) => place.id == siteId);
+      _site = match.isEmpty ? null : match.first;
+    });
   }
 
   @override
@@ -84,13 +107,26 @@ class _TrackerScreenState extends State<TrackerScreen> {
       return;
     }
     final phone = _phoneController.text.trim();
-    final selection = await showOptionsDialog(context, phone);
-    if (selection == null || !mounted) return;
+    final selection = await showOptionsDialog(
+      context,
+      phone: phone,
+      places: widget.store.places,
+      onAddPlace: widget.store.addPlace,
+      initialPlace: _site,
+    );
+    if (selection == null || selection.category == null || !mounted) return;
+    final routed = routePlace(selection.place);
+    if (routed == null) {
+      _showToast(hnbRouteMessage);
+      return;
+    }
     final error = await widget.store.add(
       phone: phone,
-      bank: selection.bank,
-      category: selection.category,
+      bank: routed.bank,
+      category: selection.category!,
       entryDate: isoDate(_entryDate),
+      place: routed.place,
+      organizationKind: routed.kind.id,
     );
     if (!mounted) return;
     if (error != null) {
@@ -99,9 +135,41 @@ class _TrackerScreenState extends State<TrackerScreen> {
     }
     _phoneController.clear();
     final now = DateTime.now();
-    setState(() => _entryDate = DateTime(now.year, now.month, now.day));
+    setState(() {
+      _entryDate = DateTime(now.year, now.month, now.day);
+      _site = _storedPlace(selection.place);
+    });
     _phoneFocus.requestFocus();
-    _showToast('Entry saved automatically.');
+    _showToast('Entry saved as ${selection.place.headline}.');
+  }
+
+  CollectionPlace _storedPlace(CollectionPlace place) {
+    final match = widget.store.places.where(
+      (item) => item.identity == place.identity,
+    );
+    return match.isEmpty ? place : match.first;
+  }
+
+  Future<void> _changeSite() async {
+    final selection = await showOptionsDialog(
+      context,
+      phone: '',
+      places: widget.store.places,
+      onAddPlace: widget.store.addPlace,
+      initialPlace: _site,
+      placeOnly: true,
+    );
+    if (selection == null || !mounted) return;
+    setState(() => _site = _storedPlace(selection.place));
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) =>
+            SettingsScreen(store: widget.store, updates: widget.updates),
+      ),
+    );
   }
 
   Future<void> _delete(String id) async {
@@ -150,7 +218,8 @@ class _TrackerScreenState extends State<TrackerScreen> {
       filename: jsonBackupFilename(DateTime.now()),
       contents: encodeBackup(widget.store.entries),
       extension: 'json',
-      success: 'JSON backup downloaded (${widget.store.entries.length} records).',
+      success:
+          'JSON backup downloaded (${widget.store.entries.length} records).',
     );
   }
 
@@ -225,7 +294,7 @@ class _TrackerScreenState extends State<TrackerScreen> {
         children: [
           Column(
             children: [
-              _Header(narrowTitle: narrowTitle),
+              _Header(narrowTitle: narrowTitle, onSettings: _openSettings),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 48),
@@ -266,7 +335,20 @@ class _TrackerScreenState extends State<TrackerScreen> {
                           const Text(
                             'Solo Collection Tracker · Keep your data private and backed up.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.muted, fontSize: 12),
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => openReleasePage(githubProfileUrl),
+                              child: const Text(
+                                'Developed by $developerName · @$githubUsername',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -303,7 +385,10 @@ class _TrackerScreenState extends State<TrackerScreen> {
                       child: Text(
                         _toast!,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
@@ -325,7 +410,9 @@ class _TrackerScreenState extends State<TrackerScreen> {
       onPickEntryDate: () async {
         final picked = await _pickDate(_entryDate);
         if (picked != null) {
-          setState(() => _entryDate = DateTime(picked.year, picked.month, picked.day));
+          setState(
+            () => _entryDate = DateTime(picked.year, picked.month, picked.day),
+          );
         }
       },
       onPickExportFrom: () async {
@@ -339,6 +426,9 @@ class _TrackerScreenState extends State<TrackerScreen> {
       onClearExportFrom: () => setState(() => _exportFrom = null),
       onClearExportTo: () => setState(() => _exportTo = null),
       onContinue: _continue,
+      siteHeadline: _site?.headline,
+      siteDetail: _siteDetail,
+      onChangeSite: _changeSite,
       onExport: _export,
       onJsonBackup: _backup,
       onImportCsv: _importCsv,
@@ -346,12 +436,24 @@ class _TrackerScreenState extends State<TrackerScreen> {
       onClear: _clear,
     );
   }
+
+  String get _siteDetail {
+    final site = _site;
+    if (site == null) {
+      return 'Choose the branch or company, then register the phone numbers collected there.';
+    }
+    if (site.kind == OrganizationKind.hnb) {
+      return 'New numbers from this visit are recorded as HNB.';
+    }
+    return 'New numbers from this visit are recorded as ${site.recordedAs}, not as HNB.';
+  }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.narrowTitle});
+  const _Header({required this.narrowTitle, required this.onSettings});
 
   final bool narrowTitle;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -423,6 +525,14 @@ class _Header extends StatelessWidget {
                   ],
                 ),
               ),
+              TextButton(
+                onPressed: onSettings,
+                style: TextButton.styleFrom(foregroundColor: Colors.white),
+                child: const Text(
+                  'Settings',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
               const Text(
                 '● Autosave is on · Saved on this device',
                 style: TextStyle(color: AppColors.privacy, fontSize: 12),
@@ -443,7 +553,11 @@ class _Metrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = viewport <= 480 ? 1 : viewport <= 800 ? 2 : 5;
+    final columns = viewport <= 480
+        ? 1
+        : viewport <= 800
+        ? 2
+        : 5;
     final compact = viewport <= 800;
     final gap = compact ? 8.0 : 14.0;
     final cards = [
@@ -485,7 +599,9 @@ class _Metrics extends StatelessWidget {
     ];
     final rows = <Widget>[];
     for (var index = 0; index < cards.length; index += columns) {
-      final end = index + columns > cards.length ? cards.length : index + columns;
+      final end = index + columns > cards.length
+          ? cards.length
+          : index + columns;
       final slice = cards.sublist(index, end);
       rows.add(
         Row(
@@ -493,7 +609,9 @@ class _Metrics extends StatelessWidget {
           children: [
             for (var slot = 0; slot < columns; slot++) ...[
               if (slot > 0) SizedBox(width: gap),
-              Expanded(child: slot < slice.length ? slice[slot] : const SizedBox()),
+              Expanded(
+                child: slot < slice.length ? slice[slot] : const SizedBox(),
+              ),
             ],
           ],
         ),

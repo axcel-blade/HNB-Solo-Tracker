@@ -2,16 +2,22 @@ import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
 import '../logic/collection_logic.dart';
+import '../logic/place_routing.dart';
 import '../models/collection_entry.dart';
+import '../models/place.dart';
+import '../models/place_directory.dart';
 
 class TrackerStore extends ChangeNotifier {
   TrackerStore(this._database);
 
   final AppDatabase _database;
   List<CollectionEntry> entries = [];
+  List<CollectionPlace> places = [];
 
   Future<void> load() async {
+    await _database.ensureBuiltInPlaces(builtInPlaces);
     entries = await _database.fetchEntries();
+    places = await _database.fetchPlaces();
     notifyListeners();
   }
 
@@ -24,19 +30,88 @@ class TrackerStore extends ChangeNotifier {
     required String entryDate,
     DateTime? createdAt,
     String? id,
+    String place = '',
+    String organizationKind = '',
   }) {
+    if (organizationKind.isNotEmpty) {
+      final kind = OrganizationKind.byId(organizationKind);
+      final routed = kind == null
+          ? null
+          : routePlace(
+              CollectionPlace(
+                kind: kind,
+                organization: kind == OrganizationKind.hnb ? 'HNB' : bank,
+                name: place,
+              ),
+            );
+      if (routed == null || routed.bank != bank.trim()) {
+        return Future.value(hnbRouteMessage);
+      }
+    }
     entries = [
       ...entries,
       CollectionEntry(
         id: id ?? newEntryId(),
         phone: phone.trim(),
-        bank: bank,
+        bank: bank.trim(),
         category: category,
         entryDate: entryDate,
         createdAt: createdAt ?? DateTime.now(),
+        place: cleanPlaceName(place),
+        organizationKind: organizationKind,
       ),
     ];
     return _persist();
+  }
+
+  Future<PlaceResult> addPlace({
+    required OrganizationKind kind,
+    required String organization,
+    required String name,
+  }) async {
+    final resolvedOrganization = kind == OrganizationKind.hnb
+        ? 'HNB'
+        : cleanPlaceName(organization);
+    final resolvedName = cleanPlaceName(
+      name.isEmpty && kind != OrganizationKind.hnb ? 'Head office' : name,
+    );
+    if (kind != OrganizationKind.hnb &&
+        isHnbOrganization(resolvedOrganization)) {
+      return const PlaceResult.fail(useHnbTabMessage);
+    }
+    final draft = CollectionPlace(
+      kind: kind,
+      organization: resolvedOrganization,
+      name: resolvedName,
+    );
+    if (routePlace(draft) == null) {
+      return const PlaceResult.fail(placeNameMessage);
+    }
+    if (places.any((place) => place.identity == draft.identity)) {
+      return const PlaceResult.fail(duplicatePlaceMessage);
+    }
+    places = [...places, draft];
+    final error = await _persistPlaces();
+    if (error != null) {
+      places = places
+          .where((place) => place.identity != draft.identity)
+          .toList();
+      return PlaceResult.fail(error);
+    }
+    final saved = places.where((place) => place.identity == draft.identity);
+    if (saved.isEmpty) return const PlaceResult.fail(saveFailedMessage);
+    return PlaceResult.ok(saved.first);
+  }
+
+  Future<String?> deletePlace(int id) async {
+    final match = places.where((place) => place.id == id);
+    if (match.isEmpty) return null;
+    if (match.first.builtIn) return 'Built-in places stay in the list.';
+    final previous = places;
+    places = places.where((place) => place.id != id).toList();
+    final error = await _persistPlaces();
+    if (error != null) places = previous;
+    return error;
   }
 
   Future<String?> delete(String id) {
@@ -57,6 +132,32 @@ class TrackerStore extends ChangeNotifier {
   Future<String?> _persist() async {
     try {
       await _database.replaceEntries(entries);
+      notifyListeners();
+      return null;
+    } catch (_) {
+      notifyListeners();
+      return saveFailedMessage;
+    }
+  }
+
+  Future<String?> _persistPlaces() async {
+    try {
+      await _database.ensureBuiltInPlaces(builtInPlaces);
+      final custom = places.where((place) => !place.builtIn);
+      final stored = await _database.fetchPlaces();
+      for (final place in stored.where((place) => !place.builtIn)) {
+        final keep = custom.any((item) => item.identity == place.identity);
+        if (!keep && place.id != null) {
+          await _database.deleteCustomPlace(place.id!);
+        }
+      }
+      final keys = stored.map((place) => place.identity).toSet();
+      final missing = [
+        for (final place in custom)
+          if (!keys.contains(place.identity)) place,
+      ];
+      if (missing.isNotEmpty) await _database.insertPlaces(missing);
+      places = await _database.fetchPlaces();
       notifyListeners();
       return null;
     } catch (_) {

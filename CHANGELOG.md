@@ -5,6 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-23
+
+### Added
+- Phone numbers are recorded against the place they were collected. HNB branches record as HNB. Other banks and other companies stay with that organization.
+- Built-in directory of HNB branches, other Sri Lankan banks, and finance companies. Custom branches and companies can be added while entering a number or in Settings. Built-in places stay in the list.
+- Settings screen for the place lists, a GitHub release check, and the developer credit.
+- Update check when the app opens and from Settings. It does not install the update. **View release** opens the GitHub release page.
+- Developer credit for Axcel Blade (@axcel-blade) on the main screen and in Settings. The name opens https://github.com/axcel-blade.
+- Schema version 2 adds `place` and `organizationKind` on `entries`, and a `places` table. An existing database migrates when it opens.
+- Per-user Windows installer `HNB-Solo-Tracker-Setup-1.1.0.exe`, built with Inno Setup from the Flutter Windows release.
+
+### Changed
+- CSV columns are Phone number, Bank, Place, Kind, Category, Entry date, and Saved date and time. Older five-column CSV files still import.
+- JSON backup includes `place` and `organizationKind`. Older backups without those fields still import.
+- A CSV duplicate is the same phone, bank, place, category, and entry date.
+
+## [1.0.0] - 2026-10-23
+
 ### Changed
 - Launcher icon is a blue collection list with three checked rows on Android, iOS, web, Windows, macOS, and Linux.
 - Replaced the Windows desktop app with a Flutter app (`hnb_solo_tracker`) for Android, iOS, web, Windows, macOS, and Linux.
@@ -22,5 +40,7 @@ The 0.1.0 notes below describe the previous Windows desktop release, not the Flu
 - Transactions list, CSV export, and a local SQLite file.
 - GitHub Actions workflow that published the Windows executable.
 
-[Unreleased]: https://github.com/axcel-blade/HNB-Solo-Tracker/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/axcel-blade/HNB-Solo-Tracker/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/axcel-blade/HNB-Solo-Tracker/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/axcel-blade/HNB-Solo-Tracker/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/axcel-blade/HNB-Solo-Tracker/releases/tag/v0.1.0
