@@ -4,16 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hnb_solo_tracker/database/app_database.dart';
 import 'package:hnb_solo_tracker/main.dart';
+import 'package:hnb_solo_tracker/models/registration_catalog.dart';
 import 'package:hnb_solo_tracker/services/app_update.dart';
 import 'package:hnb_solo_tracker/services/tracker_store.dart';
-import 'package:hnb_solo_tracker/widgets/options_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('saves a collection through the bank and category steps', (
-    tester,
-  ) async {
+  testWidgets('saves an HNB registration and can delete it', (tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     tester.view.physicalSize = const Size(1400, 2200);
     tester.view.devicePixelRatio = 1;
@@ -27,69 +25,45 @@ void main() {
     await tester.pumpWidget(HnbSoloTrackerApp(store: store));
     await tester.pump();
 
-    expect(find.text('Solo Collection Tracker'), findsOneWidget);
-    expect(find.text('No entries yet'), findsOneWidget);
-    expect(find.text('Grand Total'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), '12345');
-    await tester.tap(find.text('Continue to options →'));
-    await tester.pump();
+    expect(find.text('HNB Solo Tracker'), findsOneWidget);
+    expect(find.text('New Customer Entry Form'), findsOneWidget);
     expect(
-      find.text('Please check the phone number and try again.'),
+      find.text('No entries recorded yet. Use the entry form above to log data.'),
       findsOneWidget,
     );
 
-    await tester.enterText(find.byType(TextField), '0771234567');
-    await tester.tap(find.text('Continue to options →'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save Customer Entry'));
+    await tester.pump();
+    expect(find.text('Enter a contact or reference number.'), findsOneWidget);
 
-    expect(find.text('Where was this number collected?'), findsOneWidget);
-    final dialog = find.byType(OptionsDialog);
-    await tester.enterText(
-      find.descendant(of: dialog, matching: find.byType(TextField)),
-      'Kandy',
-    );
-    await tester.pump();
-    await tester.tap(
-      find.descendant(
-        of: dialog,
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Text && widget.data == 'Kandy',
-        ),
-      ),
-    );
-    await tester.pump();
-    await tester.tap(find.text('Next →'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Select the Solo category'), findsOneWidget);
-    await tester.tap(
-      find.descendant(of: dialog, matching: find.text('Solo Max')),
-    );
-    await tester.pump();
-    await tester.tap(find.text('Save entry ✓'));
+    await tester.enterText(find.byKey(const Key('reference-field')), 'Ref #1029');
+    await tester.tap(find.text('Save Customer Entry'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('0771234567'), findsOneWidget);
-    expect(find.text('Entry saved as HNB · Kandy.'), findsOneWidget);
-    expect(find.text('No entries yet'), findsNothing);
+    expect(find.text('Ref #1029'), findsOneWidget);
+    expect(
+      find.text('Customer registration entry added successfully!'),
+      findsOneWidget,
+    );
     expect(store.entries, hasLength(1));
-    expect(store.entries.single.bank, 'HNB');
-    expect(store.entries.single.place, 'Kandy');
-    expect(store.entries.single.organizationKind, 'hnb');
-    expect(store.entries.single.category, 'max');
+    expect(store.entries.single.bankType, BankTypes.hnb);
+    expect(store.entries.single.memberStatus, MemberStatuses.oldActive);
+    expect(store.entries.single.productType, ProductTypes.soloMax);
+    expect(store.entries.single.channelType, ChannelTypes.branch);
+    expect(store.entries.single.channelDetail, 'HNB Negombo Main Branch');
+    expect(find.text('1'), findsWidgets);
 
-    await tester.tap(find.text('Delete'));
+    await tester.tap(find.byTooltip('Delete record'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.text('OK'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('No entries yet'), findsOneWidget);
+    expect(
+      find.text('No entries recorded yet. Use the entry form above to log data.'),
+      findsOneWidget,
+    );
     expect(store.entries, isEmpty);
-    expect(find.text('Entry deleted.'), findsOneWidget);
+    expect(find.text('Entry removed from log.'), findsOneWidget);
   });
 
   testWidgets('narrow and desktop layouts render without overflow', (
@@ -100,19 +74,21 @@ void main() {
     await store.load();
     addTearDown(store.close);
 
-    for (final size in const [Size(390, 844), Size(1280, 800)]) {
+    for (final size in const [Size(390, 900), Size(1280, 800)]) {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(HnbSoloTrackerApp(store: store));
       await tester.pump();
-      expect(find.text('Add a collection'), findsOneWidget);
+      expect(find.text('New Customer Entry Form'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
   });
 
-  testWidgets('other bank visits are not recorded as HNB', (tester) async {
+  testWidgets('other bank visits record an external payment source', (
+    tester,
+  ) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     tester.view.physicalSize = const Size(1400, 2200);
     tester.view.devicePixelRatio = 1;
@@ -125,40 +101,23 @@ void main() {
     await tester.pumpWidget(HnbSoloTrackerApp(store: store));
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField), '0715555555');
-    await tester.tap(find.text('Continue to options →'));
-    await tester.pumpAndSettle();
-
-    final dialog = find.byType(OptionsDialog);
-    await tester.tap(
-      find.descendant(of: dialog, matching: find.text('Other banks')),
-    );
+    await tester.enterText(find.byKey(const Key('reference-field')), '0715555555');
+    await tester.tap(find.text('Other Bank').first);
     await tester.pump();
-    await tester.enterText(
-      find.descendant(of: dialog, matching: find.byType(TextField)),
-      'Commercial',
-    );
+    expect(find.text('Credit / Debit Card'), findsOneWidget);
+    expect(find.text('SOLO MAX'), findsNothing);
+    await tester.tap(find.text('Own Visit').first);
     await tester.pump();
-    await tester.tap(
-      find.descendant(
-        of: dialog,
-        matching: find.text('Commercial Bank · Head office'),
-      ),
-    );
-    await tester.pump();
-    await tester.tap(find.text('Next →'));
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(of: dialog, matching: find.text('Credit/Debit')),
-    );
-    await tester.pump();
-    await tester.tap(find.text('Save entry ✓'));
+    await tester.enterText(find.byKey(const Key('visit-field')), 'Majestic City Promo');
+    await tester.tap(find.text('Save Customer Entry'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(store.entries.single.bank, 'Commercial Bank');
-    expect(store.entries.single.organizationKind, 'bank');
-    expect(store.entries.single.place, 'Head office');
+    expect(store.entries.single.bankType, BankTypes.other);
+    expect(store.entries.single.memberStatus, MemberStatuses.card);
+    expect(store.entries.single.productType, ProductTypes.external);
+    expect(store.entries.single.channelType, ChannelTypes.ownVisit);
+    expect(store.entries.single.channelDetail, 'Majestic City Promo');
   });
 
   testWidgets('startup and settings show a GitHub update', (tester) async {

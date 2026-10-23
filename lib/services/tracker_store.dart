@@ -25,40 +25,28 @@ class TrackerStore extends ChangeNotifier {
 
   Future<String?> add({
     required String phone,
-    required String bank,
-    required String category,
-    required String entryDate,
+    required String bankType,
+    required String memberStatus,
+    required String productType,
+    required String channelType,
+    required String channelDetail,
+    String entryDate = '',
     DateTime? createdAt,
     String? id,
-    String place = '',
-    String organizationKind = '',
   }) {
-    if (organizationKind.isNotEmpty) {
-      final kind = OrganizationKind.byId(organizationKind);
-      final routed = kind == null
-          ? null
-          : routePlace(
-              CollectionPlace(
-                kind: kind,
-                organization: kind == OrganizationKind.hnb ? 'HNB' : bank,
-                name: place,
-              ),
-            );
-      if (routed == null || routed.bank != bank.trim()) {
-        return Future.value(hnbRouteMessage);
-      }
-    }
+    final created = createdAt ?? DateTime.now();
     entries = [
       ...entries,
       CollectionEntry(
         id: id ?? newEntryId(),
         phone: phone.trim(),
-        bank: bank.trim(),
-        category: category,
-        entryDate: entryDate,
-        createdAt: createdAt ?? DateTime.now(),
-        place: cleanPlaceName(place),
-        organizationKind: organizationKind,
+        bankType: bankType,
+        memberStatus: memberStatus,
+        productType: productType,
+        channelType: channelType,
+        channelDetail: channelDetail.trim(),
+        entryDate: entryDate.isNotEmpty ? entryDate : isoDate(created.toLocal()),
+        createdAt: created,
       ),
     ];
     return _persist();

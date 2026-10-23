@@ -16,6 +16,11 @@ class Entries extends Table {
   DateTimeColumn get createdAt => dateTime().nullable()();
   TextColumn get place => text().withDefault(const Constant(''))();
   TextColumn get organizationKind => text().withDefault(const Constant(''))();
+  TextColumn get bankType => text().withDefault(const Constant(''))();
+  TextColumn get memberStatus => text().withDefault(const Constant(''))();
+  TextColumn get productType => text().withDefault(const Constant(''))();
+  TextColumn get channelType => text().withDefault(const Constant(''))();
+  TextColumn get channelDetail => text().withDefault(const Constant(''))();
 }
 
 class Places extends Table {
@@ -44,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +58,13 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(entries, entries.place);
         await migrator.addColumn(entries, entries.organizationKind);
         await migrator.createTable(places);
+      }
+      if (from < 3) {
+        await migrator.addColumn(entries, entries.bankType);
+        await migrator.addColumn(entries, entries.memberStatus);
+        await migrator.addColumn(entries, entries.productType);
+        await migrator.addColumn(entries, entries.channelType);
+        await migrator.addColumn(entries, entries.channelDetail);
       }
     },
   );
@@ -63,7 +75,7 @@ class AppDatabase extends _$AppDatabase {
     )..orderBy([(row) => OrderingTerm.asc(row.localId)])).get();
     return [
       for (final row in rows)
-        CollectionEntry(
+        CollectionEntry.fromStored(
           id: row.id,
           phone: row.phone,
           bank: row.bank,
@@ -72,6 +84,11 @@ class AppDatabase extends _$AppDatabase {
           createdAt: row.createdAt,
           place: row.place,
           organizationKind: row.organizationKind,
+          bankType: row.bankType,
+          memberStatus: row.memberStatus,
+          productType: row.productType,
+          channelType: row.channelType,
+          channelDetail: row.channelDetail,
         ),
     ];
   }
@@ -150,12 +167,17 @@ class AppDatabase extends _$AppDatabase {
             EntriesCompanion.insert(
               id: entry.id,
               phone: entry.phone,
-              bank: entry.bank,
-              category: entry.category,
+              bank: entry.bankType,
+              category: entry.productType,
               entryDate: entry.entryDate,
               createdAt: Value(entry.createdAt),
-              place: Value(entry.place),
-              organizationKind: Value(entry.organizationKind),
+              place: Value(entry.channelDetail),
+              organizationKind: Value(entry.channelType),
+              bankType: Value(entry.bankType),
+              memberStatus: Value(entry.memberStatus),
+              productType: Value(entry.productType),
+              channelType: Value(entry.channelType),
+              channelDetail: Value(entry.channelDetail),
             ),
         ]);
       });
