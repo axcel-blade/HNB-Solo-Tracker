@@ -70,6 +70,8 @@ flutter run -d windows
 
 Use `chrome`, `android`, `ios`, `macos`, or `linux` when that target is available. See [README.md](README.md).
 
+If you change the launcher artwork, follow [Launcher icon](docs/ARCHITECTURE.md#launcher-icon) and regenerate the platform sizes before opening a pull request.
+
 Before opening a pull request, run:
 
 ```bash

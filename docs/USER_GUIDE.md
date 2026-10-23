@@ -1,6 +1,6 @@
 # User Guide
 
-The window title is **HNB Solo Tracker**. The page heading is **Solo Collection Tracker**.
+The window title is **HNB Solo Tracker**. The page heading is **Solo Collection Tracker**. The launcher icon is a blue square with three checked rows.
 
 ## Add an entry
 

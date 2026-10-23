@@ -34,6 +34,26 @@ android/ ios/ web/ windows/ macos/ linux/
 
 `dart run build_runner build --delete-conflicting-outputs` regenerates `lib/database/app_database.g.dart` after a table change.
 
+## Launcher icon
+
+The mark is three checked collection rows. The field is the app blue `#2463EB`. The checks are navy `#10233F`, the same colours as `AppColors.blue` and `AppColors.navy` in `lib/theme/app_theme.dart`.
+
+| File | Role |
+|---|---|
+| `assets/icons/app_icon.png` | Full icon for iOS, web, Windows, macOS, and Linux |
+| `assets/icons/app_icon_background.png` | Android adaptive background |
+| `assets/icons/app_icon_foreground.png` | Android adaptive foreground. Transparent outside the rows so they stay inside the mask |
+
+After editing those files:
+
+```bash
+dart run flutter_launcher_icons
+```
+
+That writes Android, iOS, web, Windows, and macOS sizes. It does not write the Linux icon. Copy `assets/icons/app_icon.png` to `linux/runner/resources/app_icon.png`.
+
+`windows/runner/resources/app_icon.ico` contains 16, 24, 32, 48, 64, 128, and 256. The command above replaces that file with a single 256 image, so put the smaller sizes back from `app_icon.png` when the artwork changes.
+
 ## Saving an entry
 
 1. `checkPhone` trims the value and requires 7–20 characters.

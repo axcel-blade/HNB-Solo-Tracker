@@ -6,6 +6,10 @@ It runs from one codebase on Android, iOS, web, Windows, macOS, and Linux. Entri
 
 This is an independent tool and is not an official product of Hatton National Bank PLC.
 
+![Solo Collection Tracker icon](assets/icons/app_icon.png)
+
+The launcher icon is that collection list, in the app blue (`#2463EB`) with navy checks (`#10233F`). Source art is in `assets/icons/`. See [Architecture](docs/ARCHITECTURE.md#launcher-icon) to regenerate platform sizes.
+
 ## What it does
 
 - Enter a phone number (trimmed, 7–20 characters) and an entry date.
@@ -79,7 +83,7 @@ dart run build_runner build --delete-conflicting-outputs
 | Document | Description |
 |---|---|
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to enter, export, import, and delete |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout and how an entry is saved |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layout, how an entry is saved, and the launcher icon |
 | [docs/DATABASE.md](docs/DATABASE.md) | Drift schema and where the file lives |
 | [docs/RELEASING.md](docs/RELEASING.md) | Versioning a release by hand |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Git Flow and pull requests |
